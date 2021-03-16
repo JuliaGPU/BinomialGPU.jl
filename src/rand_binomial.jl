@@ -41,9 +41,9 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::Integer, prob::Number)
 end
 
 # arrays of parameters
-function rand_binom!(rng, A::DenseCuArray{Int}, counts::AbstractArray{<:Integer}, prob::AbstractArray{<:Number})
-    cucount = cu(counts)
-    cuprob  = cu(probs)
+function rand_binom!(rng, A::DenseCuArray{Int}, count::AbstractArray{<:Integer}, prob::AbstractArray{<:Number})
+    cucount = cu(count)
+    cuprob  = cu(prob)
     return rand_binom!(rng, A, cucount, cuprob)
 end
 
