@@ -3,6 +3,10 @@ uuid = "c5bbfde1-2136-42cd-9b65-d5719df69ebf"
 authors = ["Simone Carlo Surace"]
 version = "0.1.0"
 
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
+
 [compat]
 julia = "1"
 
