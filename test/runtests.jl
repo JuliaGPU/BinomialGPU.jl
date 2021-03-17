@@ -8,7 +8,7 @@ using BenchmarkTools
     p = 0.5
 
     # normal tests
-    for Adims in [[4,], [4, 8], [4, 8, 16]]
+    for Adims in [[2,], [2, 4], [2, 4, 8], [2, 4, 8, 16]]
         A = CUDA.zeros(Int, Tuple(Adims))
 
         # tests with constant parameters
