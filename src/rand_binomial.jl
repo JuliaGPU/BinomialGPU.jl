@@ -9,7 +9,7 @@ const BinomialArray = DenseCuArray{Int}
 rand_binomial!(A::BinomialArray; kwargs...) = rand_binomial!(gpuarrays_rng(), A; kwargs...)
 
 rand_binomial!(A::AnyCuArray; kwargs...) =
-    error("CUDA.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
+    error("BinomialGPU.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
 
 ## unexported functions: out of place
 rand_binomial(T::BinomialType, dims::Dims; kwargs...) = rand_binomial(gpuarrays_rng(), T, dims; kwargs...)
