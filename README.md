@@ -33,3 +33,10 @@ counts = [1,2,4,8,16,32,64,128]
 probs  = CUDA.rand(8)
 rand_binomial!(A, count = counts, prob = probs)
 ```
+as well as broadcasts over arrays of parameters whose dimensions are a prefix of the dimensions of A, e.g.
+```julia
+A      = CUDA.zeros(Int, (2, 4, 8))
+counts = rand(1:128, 2, 4)
+probs  = CUDA.rand(2)
+rand_binomial!(A, count = counts, prob = probs)
+```
