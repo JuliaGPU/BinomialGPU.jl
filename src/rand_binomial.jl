@@ -58,7 +58,7 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::DenseCuArray{Int}, prob::
         threads = Base.min(length(A), config.threads, 256) # strangely seems to be faster when defaulting to 256 threads
         blocks  = cld(length(A), threads)
         kernel(A, count, prob, rng.state; threads=threads, blocks=blocks)
-    else #ndims(count) > ndims(A) || ndims(prob) > ndims(A)
+    else
         throw(DimensionMismatch("`count` and `prob` need have size compatible with A"))
     end
     return A
