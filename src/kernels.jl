@@ -35,8 +35,8 @@ function kernel_BTRD!(A, count, prob, randstates)
 
     @inbounds if i <= length(A)
         I = indices[i].I
-        n = count[CartesianIndex(I[1:ndims(count)]]
-        p = prob[CartesianIndex(I[1:ndims(prob)]]
+        n = count[CartesianIndex(I[1:ndims(count)])]
+        p = prob[CartesianIndex(I[1:ndims(prob)])]
 
         # edge cases
         if p == 0 || n == 0
@@ -79,7 +79,6 @@ function kernel_BTRD!(A, count, prob, randstates)
         r          = pp/(1-pp)
         s          = pp*(1-pp)
 
-        A[i]       = -1
         stddev     = sqrt(n * s)
         b          = 1.15f0 + 2.53f0 * stddev
         a          = -0.0873f0 + 0.0248f0 * b + 0.01f0 * pp
@@ -90,7 +89,6 @@ function kernel_BTRD!(A, count, prob, randstates)
         m          = floor((n + 1) * pp)
 
         while true
-            A[i] >= 0 && break
 
             usample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) - 0.5f0
             vsample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates)
@@ -100,7 +98,7 @@ function kernel_BTRD!(A, count, prob, randstates)
 
             if us >= 0.07f0 && vsample <= v_r
                 A[i] = ks
-                continue
+                return
             end
 
             if ks < 0 || ks > n
@@ -114,6 +112,7 @@ function kernel_BTRD!(A, count, prob, randstates)
                  stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
             if v2 <= ub
                 A[i] = ks
+                return
             end
         end
 
