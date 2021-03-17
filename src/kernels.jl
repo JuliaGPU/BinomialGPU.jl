@@ -23,7 +23,7 @@ function stirling_approx_tail(k)::Float32
     elseif k == 9
         return 0.00833056343336287f0
     end
-    kp1sq = (k + 1f0) * (k + 1f0);
+    kp1sq = (k + 1f0)^2;
     return (1.0f0 / 12 - (1.0f0 / 360 - 1.0f0 / 1260 / kp1sq) / kp1sq) / (k + 1)
 end
 
