@@ -52,14 +52,8 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::DenseCuArray{Int}, prob::
         begin
             @cuda threads=256 blocks=ceil(Int, length(A)/256) kernel_BTRD_full!(A, count, prob, rng.state)
         end
-    elseif ndims(count) > ndims(A) || ndims(prob) > ndims(A)
-        throw(DimensionMismatch("`count` and `prob` need to have smaller number of dimensions than `A`"))
-    elseif ndims(A) == 2
-        nothing
-    elseif ndims(A) == 3
-        nothing
-    elseif ndims(A) > 3
-        nothing
+    else #ndims(count) > ndims(A) || ndims(prob) > ndims(A)
+        throw(DimensionMismatch("`count` and `prob` need to be scalar or have the same dimensions as `A`"))
     end
     return A
 end

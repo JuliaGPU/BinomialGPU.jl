@@ -26,7 +26,7 @@ using CUDA, BinomialGPU
 A = CUDA.zeros(Int, 16)
 rand_binomial!(A, count = 10, prob = 0.5)
 ```
-The function currently also supports broadcast over arrays of the same size as the one to be filled:
+The function currently also supports broadcast over arrays of parameters of the same size as the one to be filled:
 ```julia
 A      = CUDA.zeros(Int, 8)
 counts = [1,2,4,8,16,32,64,128]
