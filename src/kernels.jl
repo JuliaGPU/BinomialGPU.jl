@@ -38,11 +38,15 @@ function kernel_BTRD!(A, count, prob, randstates)
         n = count[CartesianIndex(I[1:ndims(count)])]
         p = prob[CartesianIndex(I[1:ndims(prob)])]
 
+        # wrong parameter values (currently disabled)
+        # n < 0 && throw(ArgumentError("kernel_BTRD!: count must be a nonnegative integer."))
+        # !(0 <= p <= 1) && throw(ArgumentError("kernel_BTRD!: prob must be between zero and one."))
+
         # edge cases
-        if p == 0 || n == 0
+        if p <= 0 || n <= 0
             A[i] = 0
             return
-        elseif p == 1
+        elseif p >= 1
             A[i] = n
             return
         end
