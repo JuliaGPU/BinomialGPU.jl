@@ -28,7 +28,7 @@ function stirling_approx_tail(k)::Float32
 end
 
 
-# BTRD algorithm, adapted from the tensorflow library
+# BTRD algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
 function kernel_BTRD_full!(A, count, prob, randstates)
     index1  = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride1 = blockDim().x * gridDim().x
