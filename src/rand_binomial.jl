@@ -48,6 +48,9 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::AbstractArray{<:Integer},
 end
 
 function rand_binom!(rng, A::DenseCuArray{Int}, count::DenseCuArray{Int}, prob::DenseCuArray{Float32})
+    if ndims(count) > ndims(A) || ndims(prob) > ndims(A)
+        throw(DimensionMismatch("`count` and `prob` need to be scalar or have less or equal dimensions than A"))
+    end
     if size(A)[1:ndims(count)] == size(count) && size(A)[1:ndims(prob)] == size(prob)
         indices = CartesianIndices(A)
         kernel  = @cuda name="BTRD_full" launch=false kernel_BTRD!(A, count, prob, rng.state, indices)
@@ -56,7 +59,7 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::DenseCuArray{Int}, prob::
         blocks  = cld(length(A), threads)
         kernel(A, count, prob, rng.state, indices; threads=threads, blocks=blocks)
     else #ndims(count) > ndims(A) || ndims(prob) > ndims(A)
-        throw(DimensionMismatch("`count` and `prob` need to be scalar or have the same dimensions as `A`"))
+        throw(DimensionMismatch("`count` and `prob` need have size compatible with A"))
     end
     return A
 end
