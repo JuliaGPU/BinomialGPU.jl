@@ -29,8 +29,9 @@ end
 
 
 # BTRD algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRD!(A, count, prob, randstates, indices)
+function kernel_BTRD!(A, count, prob, randstates)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+    indices = CartesianIndices(A)
 
     @inbounds if i <= length(A)
         I = indices[i]
