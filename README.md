@@ -1,7 +1,7 @@
 # BinomialGPU
 
-[![Build Status](https://badge.buildkite.com/27aaeb352a9420297ed2d30cb055ac383a399ea8f121599912.svg?branch=master)](https://travis-ci.com/simsurace/BinomialGPU.jl)
-[![Coverage](https://codecov.io/gh/simsurace/BinomialGPU.jl/branch/master/graph/badge.svg)](https://buildkite.com/julialang/binomialgpu-dot-jl)
+[![Build Status](https://badge.buildkite.com/27aaeb352a9420297ed2d30cb055ac383a399ea8f121599912.svg?branch=master)](https://buildkite.com/julialang/binomialgpu-dot-jl)
+[![Coverage](https://codecov.io/gh/simsurace/BinomialGPU.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/simsurace/BinomialGPU.jl)
 [![Coverage](https://coveralls.io/repos/github/simsurace/BinomialGPU.jl/badge.svg?branch=master)](https://coveralls.io/github/simsurace/BinomialGPU.jl?branch=master)
 
 This package provides a function `rand_binomial!` to produce `CuArrays` with binomially distributed entries, analogous to `CUDA.rand_poisson!` for Poisson-distributed ones.
