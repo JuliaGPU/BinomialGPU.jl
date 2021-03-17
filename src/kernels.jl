@@ -34,9 +34,9 @@ function kernel_BTRD!(A, count, prob, randstates)
     indices = CartesianIndices(A)
 
     @inbounds if i <= length(A)
-        I = indices[i]
-        n = count[CartesianIndex(Tuple(I)[1:ndims(count)])]
-        p = prob[CartesianIndex(Tuple(I)[1:ndims(prob)])]
+        I = indices[i].I
+        n = count[CartesianIndex(I[1:ndims(count)]]
+        p = prob[CartesianIndex(I[1:ndims(prob)]]
 
         # edge cases
         if p == 0 || n == 0
