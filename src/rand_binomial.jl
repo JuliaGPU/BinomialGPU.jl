@@ -9,7 +9,7 @@ const BinomialArray = DenseCuArray{Int}
 rand_binomial!(A::BinomialArray; kwargs...) = rand_binomial!(gpuarrays_rng(), A; kwargs...)
 
 rand_binomial!(A::AnyCuArray; kwargs...) =
-    error("CUDA.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
+    error("BinomialGPU.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
 
 ## unexported functions: out of place
 rand_binomial(T::BinomialType, dims::Dims; kwargs...) = rand_binomial(gpuarrays_rng(), T, dims; kwargs...)
@@ -48,12 +48,18 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::AbstractArray{<:Integer},
 end
 
 function rand_binom!(rng, A::DenseCuArray{Int}, count::DenseCuArray{Int}, prob::DenseCuArray{Float32})
-    if size(A) == size(count) == size(prob)
-        begin
-            @cuda threads=256 blocks=ceil(Int, length(A)/256) kernel_BTRD_full!(A, count, prob, rng.state)
-        end
-    else #ndims(count) > ndims(A) || ndims(prob) > ndims(A)
-        throw(DimensionMismatch("`count` and `prob` need to be scalar or have the same dimensions as `A`"))
+    if ndims(count) > ndims(A) || ndims(prob) > ndims(A)
+        throw(DimensionMismatch("`count` and `prob` need to be scalar or have less or equal dimensions than A"))
+        return A
+    end
+    if size(A)[1:ndims(count)] == size(count) && size(A)[1:ndims(prob)] == size(prob)
+        kernel  = @cuda name="BTRD_full" launch=false kernel_BTRD!(A, count, prob, rng.state)
+        config  = launch_configuration(kernel.fun)
+        threads = Base.min(length(A), config.threads, 256) # strangely seems to be faster when defaulting to 256 threads
+        blocks  = cld(length(A), threads)
+        kernel(A, count, prob, rng.state; threads=threads, blocks=blocks)
+    else
+        throw(DimensionMismatch("`count` and `prob` need have size compatible with A"))
     end
     return A
 end
