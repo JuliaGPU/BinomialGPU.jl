@@ -30,17 +30,16 @@ end
 
 # BTRD algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
 function kernel_BTRD_full!(A, count, prob, randstates)
-    index1  = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride1 = blockDim().x * gridDim().x
+    i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
 
-    @inbounds for i in index1:stride1:length(A)
+    @inbounds if i <= length(A)
         # edge cases
         if prob[i] == 0 || count[i] == 0
             A[i] = 0
-            continue
+            return
         elseif prob[i] == 1
             A[i] = count[i]
-            continue
+            return
         end
 
         # Use naive algorithm for n <= 17
@@ -49,7 +48,7 @@ function kernel_BTRD_full!(A, count, prob, randstates)
             for m in 1:count[i]
                 A[i] += GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < prob[i]
             end
-            continue
+            return
         end
 
         # Use inversion algorithm for n*p < 10
@@ -64,7 +63,7 @@ function kernel_BTRD_full!(A, count, prob, randstates)
                 num_geom += 1
             end
             A[i] = num_geom
-            continue
+            return
         end
 
         # BTRD algorithm
@@ -112,16 +111,12 @@ function kernel_BTRD_full!(A, count, prob, randstates)
                 A[i] = ks
             end
         end
-        A[i] = max(0, A[i])
 
         # if pp = 1 - p[i] was used, undo inversion
         invert && (A[i] = count[i] - A[i])
-
     end
     return
 end
-
-
 
 
 ## old, unused kernels (for reference)
