@@ -1,6 +1,9 @@
 ## custom samplers for generating binomially distributed CuArrays
 
 
+
+## COV_EXCL_START
+
 function stirling_approx_tail(k)::Float32
     if k == 0
         return 0.0810614667953272f0
@@ -142,3 +145,7 @@ function kernel_naive_full!(A, count, prob, randstates)
     end
     return
 end
+
+
+
+## COV_EXCL_STOP
