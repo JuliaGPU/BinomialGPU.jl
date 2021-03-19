@@ -61,6 +61,15 @@ using BenchmarkTools
             end
         end
     end
+    
+    @testset "bad parameter values" begin
+        # bad parameter values default
+        A = CUDA.zeros(Int, 256)
+        @test rand_binomial!(A, count = -1, prob = 0.5) == CUDA.zeros(256) # negative counts are equivalent to zero
+        @test rand_binomial!(A, count = 2, prob = -0.1) == CUDA.zeros(256) # negative probabilities are equivalent to zero
+        @test rand_binomial!(A, count = 2, prob = 1.5) == CUDA.fill(2, 256) # probabilities greater than 1 are equivalent to 1
+        @test_throws MethodError rand_binomial!(A, count = 5., prob = 0.5) # non-integer counts throw an error
+    end
 
     @testset "benchmarks" begin
         # benchmarks
