@@ -31,8 +31,8 @@ function stirling_approx_tail(k)::Float32
 end
 
 
-# BTRD algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRD!(A, count, prob, randstates)
+# BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
+function kernel_BTRS!(A, count, prob, randstates)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     indices = CartesianIndices(A)
 
@@ -42,8 +42,8 @@ function kernel_BTRD!(A, count, prob, randstates)
         p = prob[CartesianIndex(I[1:ndims(prob)])]
 
         # wrong parameter values (currently disabled)
-        # n < 0 && throw(ArgumentError("kernel_BTRD!: count must be a nonnegative integer."))
-        # !(0 <= p <= 1) && throw(ArgumentError("kernel_BTRD!: prob must be between zero and one."))
+        # n < 0 && throw(ArgumentError("kernel_BTRS!: count must be a nonnegative integer."))
+        # !(0 <= p <= 1) && throw(ArgumentError("kernel_BTRS!: prob must be between zero and one."))
 
         # edge cases
         if p <= 0 || n <= 0
@@ -78,8 +78,8 @@ function kernel_BTRD!(A, count, prob, randstates)
             return
         end
 
-        # BTRD algorithm
-        # BTRD approximations work well for p <= 0.5
+        # BTRS algorithm
+        # BTRS approximations work well for p <= 0.5
         invert     = p > 0.5f0
         pp         = invert ? 1-p : p
 

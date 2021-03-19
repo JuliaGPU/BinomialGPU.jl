@@ -53,7 +53,7 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::DenseCuArray{Int}, prob::
         return A
     end
     if size(A)[1:ndims(count)] == size(count) && size(A)[1:ndims(prob)] == size(prob)
-        kernel  = @cuda name="BTRD_full" launch=false kernel_BTRD!(A, count, prob, rng.state)
+        kernel  = @cuda name="BTRS_full" launch=false kernel_BTRS!(A, count, prob, rng.state)
         config  = launch_configuration(kernel.fun)
         threads = Base.min(length(A), config.threads, 256) # strangely seems to be faster when defaulting to 256 threads
         blocks  = cld(length(A), threads)
