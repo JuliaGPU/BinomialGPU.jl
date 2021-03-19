@@ -8,7 +8,7 @@ using BenchmarkTools
         n = 128
         p = 0.5
 
-        @testset "A of dim $(length(Adims))" for Adims in [[2,], [2, 4], [2, 4, 8]]#, [2, 4, 8, 16]]
+        @testset "A of dim $(length(Adims))" for Adims in [[2,], [2, 4], [2, 4, 8], [2, 4, 8, 16]]
             A = CUDA.zeros(Int, Tuple(Adims))
             @test rand_binomial!(A, count = n, prob = p) isa CuArray{Int}
             @test minimum(rand_binomial!(A, count = n, prob = p)) >= 0
@@ -17,7 +17,7 @@ using BenchmarkTools
     end
 
     @testset "parameter arrays" begin
-        @testset "A of dim $(length(Adims))" for Adims in [[2,], [2, 4], [2, 4, 8]]#, [2, 4, 8, 16]]
+        @testset "A of dim $(length(Adims))" for Adims in [[2,], [2, 4], [2, 4, 8], [2, 4, 8, 16]]
             A = CUDA.zeros(Int, Tuple(Adims))
 
             @testset "count of dim $i, prob of dim $j" for i in 1:length(Adims), j in 1:length(Adims)
@@ -61,7 +61,7 @@ using BenchmarkTools
             end
         end
     end
-    
+
     @testset "bad parameter values" begin
         # bad parameter values default
         A = CUDA.zeros(Int, 256)
