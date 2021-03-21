@@ -20,7 +20,7 @@ using BenchmarkTools
         @testset "A of dim $(length(Adims))" for Adims in [[2,], [2, 4], [2, 4, 8], [2, 4, 8, 16]]
             A = CUDA.zeros(Int, Tuple(Adims))
 
-            @testset "count of dim $i, prob of dim $j" for i in 1:length(Adims), j in 1:length(Adims)
+            @testset "count of dim $i, prob of dim $j" for i in eachindex(Adims), j in eachindex(Adims)
                 ndim = Adims[1:i]
                 pdim = Adims[1:j]
                 ns = CUDA.fill(128, Tuple(ndim))
