@@ -41,6 +41,20 @@ function rand_binom!(rng, A::DenseCuArray{Int}, count::Integer, prob::Number)
 end
 
 # arrays of parameters
+function rand_binom!(rng, A::DenseCuArray{Int}, count::AbstractArray{<:Integer}, prob::Number)
+    # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
+    cucount = cu(count)
+    ps = CUDA.fill(Float32(prob), size(A))
+    return rand_binom!(rng, A, cucount, ps)
+end
+
+function rand_binom!(rng, A::DenseCuArray{Int}, count::Integer, prob::AbstractArray{<:Number})
+    # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
+    ns = CUDA.fill(Int(count), size(A))
+    cuprob  = cu(prob)
+    return rand_binom!(rng, A, ns, cuprob)
+end
+
 function rand_binom!(rng, A::DenseCuArray{Int}, count::AbstractArray{<:Integer}, prob::AbstractArray{<:Number})
     cucount = cu(count)
     cuprob  = cu(prob)

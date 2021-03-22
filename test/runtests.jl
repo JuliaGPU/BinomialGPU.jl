@@ -1,7 +1,5 @@
-using BinomialGPU
-using Test
-using CUDA
-using BenchmarkTools
+using BinomialGPU, CUDA
+using Test, BenchmarkTools
 
 @testset "BinomialGPU.jl" begin
     @testset "constant parameters" begin
@@ -19,15 +17,35 @@ using BenchmarkTools
     @testset "parameter arrays" begin
         @testset "A of dim $(length(Adims))" for Adims in [[2,], [2, 4], [2, 4, 8], [2, 4, 8, 16]]
             A = CUDA.zeros(Int, Tuple(Adims))
+            @testset "count of dim 0, prob of dim $j" for j in eachindex(Adims)
+                pdim = Adims[1:j]
+                n = 128
+                ps = CUDA.rand(pdim...)
+                @test rand_binomial!(A, count = n, prob = ps) isa CuArray{Int}
+                @test minimum(rand_binomial!(A, count = n, prob = ps)) >= 0
+                @test minimum(n .- rand_binomial!(A, count = n, prob = ps)) >= 0
+            end
+
+            @testset "count of dim $i, prob of dim 0" for i in eachindex(Adims)
+                ndim = Adims[1:i]
+                ns = CUDA.fill(128, Tuple(ndim))
+                p = 0.5
+                @test rand_binomial!(A, count = ns, prob = p) isa CuArray{Int}
+                @test minimum(rand_binomial!(A, count = ns, prob = p)) >= 0
+                @test minimum(ns .- rand_binomial!(A, count = ns, prob = p)) >= 0
+            end
 
             @testset "count of dim $i, prob of dim $j" for i in eachindex(Adims), j in eachindex(Adims)
                 ndim = Adims[1:i]
                 pdim = Adims[1:j]
                 ns = CUDA.fill(128, Tuple(ndim))
                 ps = CUDA.rand(pdim...)
+                n = 128
+                p = 0.5
                 @test rand_binomial!(A, count = ns, prob = ps) isa CuArray{Int}
                 @test minimum(rand_binomial!(A, count = ns, prob = ps)) >= 0
                 @test minimum(ns .- rand_binomial!(A, count = ns, prob = ps)) >= 0
+
 
                 # wrong size in the last dimension
                 for k in 1:i, l in 1:j
