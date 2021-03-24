@@ -56,16 +56,19 @@ function kernel_BTRS!(A, count, prob, randstates)
 
         # Use naive algorithm for n <= 17
         if n <= 17
-            A[i] = 0
-            for m in 1:n
-                A[i] += GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < p
+            k = 0
+            ctr = 1
+            while ctr <= n
+                GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < p && (k += 1)
+                ctr += 1
             end
+            A[i] = k
             return
         end
 
         # Use inversion algorithm for n*p < 10
         if n * p < 10f0
-            logp = CUDA.log(1-p)
+            logp = CUDA.log(1f0-p)
             geom_sum = 0f0
             num_geom = 0
             while true
@@ -80,23 +83,22 @@ function kernel_BTRS!(A, count, prob, randstates)
 
         # BTRS algorithm
         # BTRS approximations work well for p <= 0.5
-        invert     = p > 0.5f0
-        pp         = invert ? 1-p : p
+        (invert = p > 0.5f0) && (p = 1f0 - p)
+        #pp         = invert ? 1-p : p
 
-        r          = pp/(1-pp)
-        s          = pp*(1-pp)
+        r       = p/(1f0-p)
+        s       = p*(1f0-p)
 
-        stddev     = sqrt(n * s)
-        b          = 1.15f0 + 2.53f0 * stddev
-        a          = -0.0873f0 + 0.0248f0 * b + 0.01f0 * pp
-        c          = n * pp + 0.5f0
-        v_r        = 0.92f0 - 4.2f0 / b
+        stddev  = sqrt(n * s)
+        b       = 1.15f0 + 2.53f0 * stddev
+        a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
+        c       = n * p + 0.5f0
+        v_r     = 0.92f0 - 4.2f0 / b
 
-        alpha      = (2.83f0 + 5.1f0 / b) * stddev;
-        m          = floor((n + 1) * pp)
+        alpha   = (2.83f0 + 5.1f0 / b) * stddev;
+        m       = floor((n + 1) * p)
 
         while true
-
             usample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) - 0.5f0
             vsample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates)
 
@@ -104,8 +106,7 @@ function kernel_BTRS!(A, count, prob, randstates)
             ks = floor((2 * a / us + b) * usample + c)
 
             if us >= 0.07f0 && vsample <= v_r
-                A[i] = ks
-                return
+                break
             end
 
             if ks < 0 || ks > n
@@ -118,13 +119,14 @@ function kernel_BTRS!(A, count, prob, randstates)
                  (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
                  stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
             if v2 <= ub
-                A[i] = ks
-                return
+                break
             end
         end
 
-        # if pp = 1 - p[i] was used, undo inversion
-        invert && (A[i] = n - A[i])
+        # if p = 1 - p[i] was used, undo inversion
+        invert && (ks = n - ks)
+        A[i] = Int(ks);
+        nothing
     end
     return
 end
