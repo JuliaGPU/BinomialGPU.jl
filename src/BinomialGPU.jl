@@ -1,6 +1,7 @@
 module BinomialGPU
 
-using CUDA, GPUArrays
+using CUDA
+using GPUArrays
 
 # user-level API
 include("rand_binomial.jl")

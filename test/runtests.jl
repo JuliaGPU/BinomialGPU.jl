@@ -1,5 +1,8 @@
-using BinomialGPU, CUDA
-using Test, BenchmarkTools
+using BinomialGPU
+using CUDA
+
+using BenchmarkTools
+using Test
 
 @testset "BinomialGPU.jl" begin
     @testset "constant parameters" begin
