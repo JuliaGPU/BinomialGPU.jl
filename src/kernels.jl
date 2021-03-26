@@ -32,7 +32,7 @@ end
 
 
 # BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
 
     @inbounds if i <= length(A)
