@@ -6,7 +6,7 @@ const BinomialType = Union{Type{<:Integer}}
 const BinomialArray = DenseCuArray{<:Integer}
 
 ## exported functions: in-place
-rand_binomial!(A::BinomialArray; kwargs...) = rand_binomial!(gpuarrays_rng(), A; kwargs...)
+function rand_binomial!(A::BinomialArray; kwargs...) end
 
 rand_binomial!(A::AnyCuArray; kwargs...) =
     error("BinomialGPU.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
@@ -26,52 +26,52 @@ rand_binomial(dim1::Integer, dims::Integer...; kwargs...) =
     rand_binomial(gpuarrays_rng(), Dims((dim1, dims...)); kwargs...)
 
 ## main internal function
-function rand_binomial!(rng, A::BinomialArray; count, prob)
-    return rand_binom!(rng, A, count, prob)
+function rand_binomial!(A::BinomialArray; count, prob)
+    return rand_binom!(A, count, prob)
 end
 
 ## dispatching on parameter types
 
 # constant parameters
-function rand_binom!(rng, A::BinomialArray, count::Integer, prob::Number)
+function rand_binom!(A::BinomialArray, count::Integer, prob::Number)
     # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
     ns = CUDA.fill(Int(count), size(A))
     ps = CUDA.fill(Float32(prob), size(A))
-    return rand_binom!(rng, A, ns, ps)
+    return rand_binom!(A, ns, ps)
 end
 
 # arrays of parameters
-function rand_binom!(rng, A::BinomialArray, count::BinomialArray, prob::Number)
+function rand_binom!(A::BinomialArray, count::BinomialArray, prob::Number)
     # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
     cucount = cu(count)
     ps = CUDA.fill(Float32(prob), size(A))
-    return rand_binom!(rng, A, cucount, ps)
+    return rand_binom!(A, cucount, ps)
 end
 
-function rand_binom!(rng, A::BinomialArray, count::Integer, prob::AbstractArray{<:Number})
+function rand_binom!(A::BinomialArray, count::Integer, prob::AbstractArray{<:Number})
     # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
     ns = CUDA.fill(Int(count), size(A))
     cuprob  = cu(prob)
-    return rand_binom!(rng, A, ns, cuprob)
+    return rand_binom!(A, ns, cuprob)
 end
 
-function rand_binom!(rng, A::BinomialArray, count::BinomialArray, prob::AbstractArray{<:Number})
+function rand_binom!(A::BinomialArray, count::BinomialArray, prob::AbstractArray{<:Number})
     cucount = cu(count)
     cuprob  = cu(prob)
-    return rand_binom!(rng, A, cucount, cuprob)
+    return rand_binom!(A, cucount, cuprob)
 end
 
-function rand_binom!(rng, A::BinomialArray, count::BinomialArray, prob::DenseCuArray{Float32})
+function rand_binom!(A::BinomialArray, count::BinomialArray, prob::DenseCuArray{Float32})
     if ndims(count) > ndims(A) || ndims(prob) > ndims(A)
         throw(DimensionMismatch("`count` and `prob` need to be scalar or have less or equal dimensions than A"))
         return A
     end
     if size(A)[1:ndims(count)] == size(count) && size(A)[1:ndims(prob)] == size(prob)
-        kernel  = @cuda name="BTRS_full" launch=false kernel_BTRS!(A, count, prob, rng.state)
+        kernel  = @cuda name="BTRS_full" launch=false kernel_BTRS!(A, count, prob)
         config  = launch_configuration(kernel.fun)
         threads = Base.min(length(A), config.threads, 256) # strangely seems to be faster when defaulting to 256 threads
         blocks  = cld(length(A), threads)
-        kernel(A, count, prob, rng.state; threads=threads, blocks=blocks)
+        kernel(A, count, prob; threads=threads, blocks=blocks)
     else
         throw(DimensionMismatch("`count` and `prob` need have size compatible with A"))
     end
