@@ -10,18 +10,17 @@ rand_binomial!(A::AnyCuArray; kwargs...) =
     error("BinomialGPU.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
 
 ## unexported functions: out of place
-rand_binomial(T::BinomialType, dims::Dims; kwargs...) = rand_binomial(gpuarrays_rng(), T, dims; kwargs...)
+function rand_binomial(T::BinomialType, dims::Dims; kwargs...) end
 
 rand_binomial(T::BinomialType, dim1::Integer, dims::Integer...; kwargs...) =
-    rand_binomial(gpuarrays_rng(), T, Dims((dim1, dims...)); kwargs...)
+    rand_binomial(T, Dims((dim1, dims...)); kwargs...)
 
 rand_binomial(T::Type, dims::Dims; kwargs...) = rand_binomial!(CuArray{T}(undef, dims...); kwargs...)
 
 rand_binomial(T::Type, dim1::Integer, dims::Integer...; kwargs...) =
     rand_binomial!(CuArray{T}(undef, dim1, dims...); kwargs...)
 
-rand_binomial(dim1::Integer, dims::Integer...; kwargs...) =
-    rand_binomial(gpuarrays_rng(), Dims((dim1, dims...)); kwargs...)
+rand_binomial(dim1::Integer, dims::Integer...; kwargs...) = rand_binomial(Dims((dim1, dims...)); kwargs...)
 
 ## main internal function
 function rand_binomial!(A::BinomialArray; count, prob)
