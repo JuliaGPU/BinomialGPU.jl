@@ -67,25 +67,11 @@ function rand_binom!(A::BinomialArray, count::BinomialArray, prob::DenseCuArray{
         return A
     end
     if size(A)[1:ndims(count)] == size(count) && size(A)[1:ndims(prob)] == size(prob)
-        count_dim_larger_than_prob_dim = ndims(count) > ndims(prob)
-        if count_dim_larger_than_prob_dim
-            R1 = CartesianIndices(prob) # indices for count
-            R2 = CartesianIndices(size(count)[ndims(prob)+1:end]) # indices for prob that are not included in R1
-            Rr = CartesianIndices(size(A)[ndims(count)+1:end]) # remaining indices in A
-        else
-            R1 = CartesianIndices(count) # indices for count
-            R2 = CartesianIndices(size(prob)[ndims(count)+1:end]) # indices for prob that are not included in R1
-            Rr = CartesianIndices(size(A)[ndims(prob)+1:end]) # remaining indices in A
-        end
-        Rp = CartesianIndices((length(R1), length(R2))) # indices for parameters
-        Ra = CartesianIndices((length(Rp), length(Rr))) # indices for parameters and A
-
-        kernel  = @cuda name="BTRS_full" launch=false kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+        kernel  = @cuda name="BTRS_full" launch=false kernel_BTRS!(A, count, prob)
         config  = launch_configuration(kernel.fun)
         threads = Base.min(length(A), config.threads, 256) # strangely seems to be faster when defaulting to 256 threads
         blocks  = cld(length(A), threads)
-
-        kernel(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim; threads=threads, blocks=blocks)
+        kernel(A, count, prob; threads=threads, blocks=blocks)
     else
         throw(DimensionMismatch("`count` and `prob` need have size compatible with A"))
     end

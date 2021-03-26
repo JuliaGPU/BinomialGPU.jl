@@ -32,22 +32,14 @@ end
 
 
 # BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+function kernel_BTRS!(A, count, prob)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+    indices = CartesianIndices(A)
 
     @inbounds if i <= length(A)
-        I  = Ra[i]
-        Ip = Rp[I[1]]
-        I1 = R1[Ip[1]]
-        I2 = R2[Ip[2]]
-
-        if count_dim_larger_than_prob_dim
-            n = count[CartesianIndex(I1, I2)]
-            p = prob[I1]
-        else
-            n = count[I1]
-            p = prob[CartesianIndex(I1, I2)]
-        end
+        I = indices[i].I
+        n = count[CartesianIndex(I[1:ndims(count)])]
+        p = prob[CartesianIndex(I[1:ndims(prob)])]
 
         # wrong parameter values (currently disabled)
         # n < 0 && throw(ArgumentError("kernel_BTRS!: count must be a nonnegative integer."))
