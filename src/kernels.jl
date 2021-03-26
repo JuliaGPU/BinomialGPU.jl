@@ -32,7 +32,7 @@ end
 
 
 # BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
 
     @inbounds if i <= length(A)
@@ -67,7 +67,7 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
             k = 0
             ctr = 1
             while ctr <= n
-                GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < p && (k += 1)
+                rand(Float32) < p && (k += 1)
                 ctr += 1
             end
             A[i] = k
@@ -80,7 +80,7 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
             geom_sum = 0f0
             num_geom = 0
             while true
-                geom      = ceil(CUDA.log(GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates)) / logp)
+                geom      = ceil(CUDA.log(rand(Float32)) / logp)
                 geom_sum += geom
                 geom_sum > n && break
                 num_geom += 1
@@ -107,8 +107,8 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
         m       = floor((n + 1) * p)
 
         while true
-            usample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) - 0.5f0
-            vsample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates)
+            usample = rand(Float32) - 0.5f0
+            vsample = rand(Float32)
 
             us = 0.5f0 - abs(usample)
             ks = floor((2 * a / us + b) * usample + c)
@@ -143,14 +143,14 @@ end
 ## old, unused kernels (for reference)
 
 #naive algorithm, full
-function kernel_naive_full!(A, count, prob, randstates)
+function kernel_naive_full!(A, count, prob)
     index1  = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride1 = blockDim().x * gridDim().x
 
     @inbounds for i in index1:stride1:length(A)
         A[i] = 0
         for m in 1:count[i]
-            @inbounds A[i] += GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < prob[i]
+            @inbounds A[i] += rand(Float32) < prob[i]
         end
     end
     return
