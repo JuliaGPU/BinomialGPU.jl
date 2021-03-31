@@ -40,7 +40,7 @@ version = "0.4.1"
 
 [[CUDA]]
 deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CompilerSupportLibraries_jll", "DataStructures", "ExprTools", "GPUArrays", "GPUCompiler", "LLVM", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "MacroTools", "Memoize", "Printf", "Random", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "SpecialFunctions", "Statistics", "TimerOutputs"]
-git-tree-sha1 = "b6635c2faaa48550e2cef0c775c0931cb51a8006"
+git-tree-sha1 = "766b542ae632b04f3bf3bc834dd169ff0c6c66db"
 repo-rev = "tb/speedup_rand"
 repo-url = "https://github.com/JuliaGPU/CUDA.jl.git"
 uuid = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -48,9 +48,9 @@ version = "2.6.0"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "0893f8d90331a0f5223c7ef2a8868464394a886c"
+git-tree-sha1 = "644c24cd6344348f1c645efab24b707088be526a"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.9.33"
+version = "0.9.34"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
@@ -97,11 +97,9 @@ version = "6.2.0"
 
 [[GPUCompiler]]
 deps = ["DataStructures", "ExprTools", "InteractiveUtils", "LLVM", "Libdl", "Logging", "Scratch", "Serialization", "TimerOutputs", "UUIDs"]
-git-tree-sha1 = "b6c3b8e2df6ffe0da0b10e2045ce35a3cf618b8a"
-repo-rev = "master"
-repo-url = "https://github.com/JuliaGPU/GPUCompiler.jl.git"
+git-tree-sha1 = "0bae2d5a40c54c6c680a1a223f83a3c415ec730b"
 uuid = "61eb1bfa-7361-4325-ad38-22787b887f55"
-version = "0.10.1"
+version = "0.11.0"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
