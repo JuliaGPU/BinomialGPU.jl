@@ -11,9 +11,20 @@ This package provides a function `rand_binomial!` to produce `CuArrays` with bin
 Use the built-in package manager:
 
 ```julia
-import Pkg; Pkg.add("BinomialGPU")
+] add BinomialGPU
 ```
 
+in order to use the most recent version of this package, you need to also install this branch of CUDA.jl:
+
+```julia
+] add CUDA`#tb/speedup_rand`
+```
+
+If you do not want to do this, use version 0.2.3, which has the same functionality, but is a bit slower:
+
+```julia
+] add BinomialGPU@0.2.3
+```
 
 ## Usage
 
@@ -46,4 +57,4 @@ or arbitrary combinations of scalars and arrays of parameters.
 The sampler is fast: it is about one order of magnitude faster than other samplers. But it is still an open question whether it can be made faster, whether there are other samplers with competitive speed, and it shows some non-intuitive behavior:
 * The speed is faster in Julia 1.5.4 than in the current Julia 1.6 release candidate. See [issue #8](https://github.com/JuliaGPU/BinomialGPU.jl/issues/8).
 * The speed is slower when using optimal thread allocation than when defaulting to 256 threads. See [issue #2](https://github.com/JuliaGPU/BinomialGPU.jl/issues/2)
-* Are there any other samplers that are comparably fast or faster? I compared the following: sample an array of size `(1024, 1024)` with `count = 128` and `prob` of size `(1024, 1024)` with uniformly drawn entries. Timings on an RTX2070 card: BinomialGPU.jl 1.4ms, PyTorch 11ms, CuPy 18ms, tensorflow 400ms. Please let me know if you know samplers that are not yet listed.
+* Are there any other samplers that are comparably fast or faster? I compared the following: sample an array of size `(1024, 1024)` with `count = 128` and `prob` of size `(1024, 1024)` with uniformly drawn entries. Timings on an RTX2070 card: BinomialGPU.jl 0.6ms, PyTorch 11ms, CuPy 18ms, tensorflow 400ms. Please let me know if you know samplers that are not yet listed.
