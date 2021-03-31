@@ -4,7 +4,7 @@ const BinomialType = Union{Type{<:Integer}}
 const BinomialArray = DenseCuArray{<:Integer}
 
 ## exported functions: in-place
-function rand_binomial!(A::BinomialArray; kwargs...) end
+function rand_binomial!(A::AnyCuArray; kwargs...) end
 
 rand_binomial!(A::AnyCuArray; kwargs...) =
     error("BinomialGPU.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
