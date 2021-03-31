@@ -17,7 +17,7 @@ Use the built-in package manager:
 in order to use the most recent version of this package, you need to also install this branch of CUDA.jl:
 
 ```julia
-] add CUDA`#tb/speedup_rand`
+] add CUDA\#tb/speedup_rand
 ```
 
 If you do not want to do this, use version 0.2.3, which has the same functionality, but is a bit slower:
