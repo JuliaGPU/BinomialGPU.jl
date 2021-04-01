@@ -42,7 +42,6 @@ rand_binomial!(A, count = counts, prob = probs)
 
 ## Issues
 
-* There is currently a bug (see [issue #3](https://github.com/JuliaGPU/BinomialGPU.jl/issues/3)): if the dimension of the sampled array is equal to or larger than the dimension of either `count` or `prob` plus 3, an error is thrown. Other sizes work fine.
 * The sampler is fast: it is about one order of magnitude faster than other samplers. But it is still an open question whether it can be made faster, whether there are other samplers with competitive speed, and it shows some non-intuitive behavior:
     * The functionality to draw random numbers within CUDA.jl kernels is still under development. A new function `rand()` has recently become available, but it hasn't been tried within this package. See [issue #7](https://github.com/JuliaGPU/BinomialGPU.jl/issues/7).
     * The speed is faster in Julia 1.5.4 than in the current Julia 1.6 release candidate. See [issue #8](https://github.com/JuliaGPU/BinomialGPU.jl/issues/8).
