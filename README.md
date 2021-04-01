@@ -11,19 +11,19 @@ This package provides a function `rand_binomial!` to produce `CuArrays` with bin
 Use the built-in package manager, accessed in Julia via `]`:
 
 ```julia
-(@v1.6) pkg> add BinomialGPU
+(@v1.6) pkg> add BinomialGPU#experimental_rand
 ```
 
-in order to use the most recent version of this package, you need to also install this branch of CUDA.jl:
+in order this branch of this package, you need to also install this branch of CUDA.jl:
 
 ```julia
 (@v1.6) pkg> add CUDA#tb/speedup_rand
 ```
 
-If you do not want to do this, use version 0.2.3, which has the same functionality, but is a bit slower:
+If you do not want to do this, use the latest release, which has the same functionality, but is a bit slower:
 
 ```julia
-(@v1.6) pkg> add BinomialGPU@0.2.3
+(@v1.6) pkg> add BinomialGPU
 ```
 
 ## Usage
