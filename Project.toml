@@ -9,7 +9,7 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 
 [compat]
-BenchmarkTools = "0.6"
+BenchmarkTools = "0.6, 0.7"
 CUDA = "2"
 GPUArrays = "6"
 julia = "1.5"
