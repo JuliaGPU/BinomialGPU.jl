@@ -9,7 +9,7 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 
 [compat]
 BenchmarkTools = "0.6"
-CUDA = "2"
+CUDA = "3"
 julia = "1.6"
 
 [extras]
