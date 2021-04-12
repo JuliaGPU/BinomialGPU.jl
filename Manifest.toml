@@ -41,7 +41,7 @@ version = "0.4.1"
 [[CUDA]]
 deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CompilerSupportLibraries_jll", "DataStructures", "ExprTools", "GPUArrays", "GPUCompiler", "LLVM", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "MacroTools", "Memoize", "Printf", "Random", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "SpecialFunctions", "Statistics", "TimerOutputs"]
 git-tree-sha1 = "766b542ae632b04f3bf3bc834dd169ff0c6c66db"
-repo-rev = "tb/speedup_rand"
+repo-rev = "766b542ae632b04f3bf3bc834dd169ff0c6c66db"
 repo-url = "https://github.com/JuliaGPU/CUDA.jl.git"
 uuid = "052768ef-5323-5732-b1bb-66c8b64840ba"
 version = "2.6.0"
