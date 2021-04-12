@@ -1,7 +1,7 @@
 name = "BinomialGPU"
 uuid = "c5bbfde1-2136-42cd-9b65-d5719df69ebf"
 authors = ["Simone Carlo Surace"]
-version = "0.2.4"
+version = "0.2.5"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -9,7 +9,7 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 
 [compat]
 BenchmarkTools = "0.6"
-CUDA = "2"
+CUDA = "2, 3.0"
 julia = "1.6"
 
 [extras]
