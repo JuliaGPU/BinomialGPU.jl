@@ -195,7 +195,7 @@ function kernel_naive!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_pro
 
         k = 0
         for m in 1:128
-            @inbounds k += rand(Float32) < prob[i]
+            @inbounds k += rand(Float32) < p
             if i <= length(A) && m == n
                 @inbounds A[i] = k
             end
