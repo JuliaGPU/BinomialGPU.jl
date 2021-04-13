@@ -167,6 +167,48 @@ function kernel_naive_full!(A, count, prob)
     return
 end
 
+function kernel_naive!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+    tid    = threadIdx().x
+    offset = (blockIdx().x - 1) * blockDim().x
+
+    sync_threads()
+
+    while offset < length(A)
+        i = tid + offset
+        if i <= length(A)
+            @inbounds I  = Ra[i]
+            @inbounds Ip = Rp[I[1]]
+            @inbounds I1 = R1[Ip[1]]
+            @inbounds I2 = R2[Ip[2]]
+
+            if count_dim_larger_than_prob_dim
+                @inbounds n = count[CartesianIndex(I1, I2)]
+                @inbounds p = prob[I1]
+            else
+                @inbounds n = count[I1]
+                @inbounds p = prob[CartesianIndex(I1, I2)]
+            end
+        else
+            n = 0
+            p = 0f0
+        end
+
+        k = 0
+        for m in 1:128
+            @inbounds k += rand(Float32) < prob[i]
+            if i <= length(A) && m == n
+                @inbounds A[i] = k
+            end
+        end
+
+        offset += (blockDim().x - 1) * gridDim().x
+    end
+
+    sync_threads()
+
+    return
+end
+
 
 
 ## COV_EXCL_STOP
