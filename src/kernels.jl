@@ -6,28 +6,28 @@
 
 function stirling_approx_tail(k)::Float32
     if k == 0
-        return 0.0810614667953272f0
+        return 8.10614667953272f-2
     elseif k == 1
-        return 0.0413406959554092f0
+        return 4.13406959554092f-2
     elseif k == 2
-        return 0.0276779256849983f0
+        return 2.76779256849983f-2
     elseif k == 3
-        return 0.0207906721037650f0
+        return 2.07906721037650f-2
     elseif k == 4
-        return 0.0166446911898211f0
+        return 1.66446911898211f-2
     elseif k == 5
-        return 0.0138761288230707f0
+        return 1.38761288230707f-2
     elseif k == 6
-        return 0.0118967099458917f0
+        return 1.18967099458917f-2
     elseif k == 7
-        return 0.0104112652619720f0
+        return 1.04112652619720f-2
     elseif k == 8
-        return 0.00925546218271273f0
+        return 9.25546218271273f-3
     elseif k == 9
-        return 0.00833056343336287f0
+        return 8.33056343336287f-3
     end
     kp1sq = (k + 1f0)^2;
-    return (1.0f0 / 12 - (1.0f0 / 360 - 1.0f0 / 1260 / kp1sq) / kp1sq) / (k + 1)
+    return (1f0 / 12 - (1f0 / 360 - 1f0 / 1260 / kp1sq) / kp1sq) / (k + 1)
 end
 
 
@@ -105,7 +105,7 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
 
             stddev  = sqrt(n * s)
             b       = 1.15f0 + 2.53f0 * stddev
-            a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
+            a       = -8.73f-2 + 2.48f-2 * b + 1f-2 * p
             c       = n * p + 0.5f0
             v_r     = 0.92f0 - 4.2f0 / b
 
@@ -119,7 +119,7 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
                 us = 0.5f0 - abs(usample)
                 ks = floor((2 * a / us + b) * usample + c)
 
-                if us >= 0.07f0 && vsample <= v_r
+                if us >= 7f-2 && vsample <= v_r
                     break
                 end
 
