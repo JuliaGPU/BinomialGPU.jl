@@ -76,11 +76,11 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
 
         # Use inversion algorithm for n*p < 10
         if n * p < 10f0
-            logp = CUDA.log(1f0-p)
+            logp = log(1f0-p)
             geom_sum = 0f0
             num_geom = 0
             while true
-                geom      = ceil(CUDA.log(rand(Float32)) / logp)
+                geom      = ceil(log(rand(Float32)) / logp)
                 geom_sum += geom
                 geom_sum > n && break
                 num_geom += 1
@@ -121,11 +121,12 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
                 continue
             end
 
-            v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
-            ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
-                 (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
-                 (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
-                 stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
+            v2 = log(vsample * alpha / (a / (us * us) + b))
+            ub = (m + 0.5f0) * log((m + 1) / (r * (n - m + 1))) +
+                 (n + 1) * log((n - m + 1) / (n - ks + 1)) +
+                 (ks + 0.5f0) * log(r * (n - ks + 1) / (ks + 1)) +
+                 stirling_approx_tail(m) + stirling_approx_tail(n - m) - 
+                 stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
             if v2 <= ub
                 break
             end
