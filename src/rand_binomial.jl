@@ -46,7 +46,7 @@ function rand_binom!(A::BinomialArray, count::BinomialArray, prob::Number)
     # as a table-based method should in principle be faster)
     cucount = cu(count)
     ps = CUDA.fill(Float32(prob), size(A))
-    return rand_binom!(rng, A, cucount, ps)
+    return rand_binom!(A, cucount, ps)
 end
 
 function rand_binom!(A::BinomialArray, count::Integer, prob::AbstractArray{<:Number})
@@ -54,13 +54,13 @@ function rand_binom!(A::BinomialArray, count::Integer, prob::AbstractArray{<:Num
     # as a table-based method should in principle be faster)
     ns = CUDA.fill(Int(count), size(A))
     cuprob  = cu(prob)
-    return rand_binom!(rng, A, ns, cuprob)
+    return rand_binom!(A, ns, cuprob)
 end
 
 function rand_binom!(A::BinomialArray, count::BinomialArray, prob::AbstractArray{<:Number})
     cucount = cu(count)
     cuprob  = cu(prob)
-    return rand_binom!(rng, A, cucount, cuprob)
+    return rand_binom!(A, cucount, cuprob)
 end
 
 function rand_binom!(A::BinomialArray, count::BinomialArray, prob::DenseCuArray{Float32})
