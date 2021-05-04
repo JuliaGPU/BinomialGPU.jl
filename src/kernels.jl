@@ -143,23 +143,4 @@ function kernel_BTRS!(
     return
 end
 
-
-## old, unused kernels (for reference)
-
-#naive algorithm, full
-function kernel_naive_full!(A, count, prob, randstates)
-    index1  = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride1 = blockDim().x * gridDim().x
-
-    @inbounds for i in index1:stride1:length(A)
-        A[i] = 0
-        for m in 1:count[i]
-            @inbounds A[i] += GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < prob[i]
-        end
-    end
-    return
-end
-
-
-
 ## COV_EXCL_STOP
