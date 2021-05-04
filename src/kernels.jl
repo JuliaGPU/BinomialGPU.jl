@@ -31,9 +31,17 @@ function stirling_approx_tail(k)::Float32
 end
 
 
-# BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+# BTRS algorithm, adapted from the tensorflow library 
+# (github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
+function kernel_BTRS!(
+    A, count, prob, 
+    R1, R2, Rp, Ra, 
+    count_dim_larger_than_prob_dim, 
+    seed::UInt32
+)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+
+    @inbounds Random.seed!(seed)
 
     @inbounds if i <= length(A)
         I  = Ra[i]
@@ -49,10 +57,6 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
             p = prob[CartesianIndex(I1, I2)]
         end
 
-        # wrong parameter values (currently disabled)
-        # n < 0 && throw(ArgumentError("kernel_BTRS!: count must be a nonnegative integer."))
-        # !(0 <= p <= 1) && throw(ArgumentError("kernel_BTRS!: prob must be between zero and one."))
-
         # edge cases
         if p <= 0 || n <= 0
             A[i] = 0
@@ -61,7 +65,7 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
             A[i] = n
             return
         end
-
+        
         # Use naive algorithm for n <= 17
         if n <= 17
             k = 0
@@ -92,7 +96,6 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
         # BTRS algorithm
         # BTRS approximations work well for p <= 0.5
         (invert = p > 0.5f0) && (p = 1f0 - p)
-        #pp         = invert ? 1-p : p
 
         r       = p/(1f0-p)
         s       = p*(1f0-p)
@@ -136,7 +139,7 @@ function kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob
         invert && (ks = n - ks)
         A[i] = Int(ks);
         nothing
-    end
+    end#if
     return
 end
 
