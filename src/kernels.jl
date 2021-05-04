@@ -31,9 +31,17 @@ function stirling_approx_tail(k)::Float32
 end
 
 
-# BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+# BTRS algorithm, adapted from the tensorflow library 
+# (github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
+function kernel_BTRS!(
+    A, count, prob, 
+    R1, R2, Rp, Ra, 
+    count_dim_larger_than_prob_dim, 
+    seed::UInt32
+)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+
+    @inbounds Random.seed!(seed)
 
     @inbounds if i <= length(A)
         I  = Ra[i]
@@ -49,10 +57,6 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
             p = prob[CartesianIndex(I1, I2)]
         end
 
-        # wrong parameter values (currently disabled)
-        # n < 0 && throw(ArgumentError("kernel_BTRS!: count must be a nonnegative integer."))
-        # !(0 <= p <= 1) && throw(ArgumentError("kernel_BTRS!: prob must be between zero and one."))
-
         # edge cases
         if p <= 0 || n <= 0
             A[i] = 0
@@ -61,13 +65,13 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
             A[i] = n
             return
         end
-
+        
         # Use naive algorithm for n <= 17
         if n <= 17
             k = 0
             ctr = 1
             while ctr <= n
-                GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < p && (k += 1)
+                rand(Float32) < p && (k += 1)
                 ctr += 1
             end
             A[i] = k
@@ -76,11 +80,11 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
 
         # Use inversion algorithm for n*p < 10
         if n * p < 10f0
-            logp = CUDA.log(1f0-p)
+            logp = log(1f0-p)
             geom_sum = 0f0
             num_geom = 0
             while true
-                geom      = ceil(CUDA.log(GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates)) / logp)
+                geom      = ceil(log(rand(Float32)) / logp)
                 geom_sum += geom
                 geom_sum > n && break
                 num_geom += 1
@@ -92,7 +96,6 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
         # BTRS algorithm
         # BTRS approximations work well for p <= 0.5
         (invert = p > 0.5f0) && (p = 1f0 - p)
-        #pp         = invert ? 1-p : p
 
         r       = p/(1f0-p)
         s       = p*(1f0-p)
@@ -107,8 +110,8 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
         m       = floor((n + 1) * p)
 
         while true
-            usample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) - 0.5f0
-            vsample = GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates)
+            usample = rand(Float32) - 0.5f0
+            vsample = rand(Float32)
 
             us = 0.5f0 - abs(usample)
             ks = floor((2 * a / us + b) * usample + c)
@@ -121,11 +124,12 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
                 continue
             end
 
-            v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
-            ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
-                 (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
-                 (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
-                 stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
+            v2 = log(vsample * alpha / (a / (us * us) + b))
+            ub = (m + 0.5f0) * log((m + 1) / (r * (n - m + 1))) +
+                 (n + 1) * log((n - m + 1) / (n - ks + 1)) +
+                 (ks + 0.5f0) * log(r * (n - ks + 1) / (ks + 1)) +
+                 stirling_approx_tail(m) + stirling_approx_tail(n - m) - 
+                 stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
             if v2 <= ub
                 break
             end
@@ -135,7 +139,7 @@ function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larg
         invert && (ks = n - ks)
         A[i] = Int(ks);
         nothing
-    end
+    end#if
     return
 end
 
