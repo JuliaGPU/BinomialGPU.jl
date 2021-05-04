@@ -105,7 +105,8 @@ function rand_binom!(A::BinomialArray, count::BinomialArray, prob::DenseCuArray{
             A, count, prob, 
             R1, R2, Rp, Ra, 
             count_dim_larger_than_prob_dim,
-            seed
+            seed;
+            threads = threads, blocks=blocks
          )
     else
         throw(DimensionMismatch("`count` and `prob` need have size compatible with A"))
