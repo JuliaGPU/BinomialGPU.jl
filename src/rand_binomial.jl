@@ -80,12 +80,12 @@ function rand_binom!(rng, A::BinomialArray, count::BinomialArray, prob::DenseCuA
         Rp = CartesianIndices((length(R1), length(R2))) # indices for parameters
         Ra = CartesianIndices((length(Rp), length(Rr))) # indices for parameters and A
 
-        kernel  = @cuda name="BTRS_full" launch=false kernel_BTRS!(A, count, prob, rng.state, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
+        kernel  = @cuda name="BTRS_full" launch=false kernel_BTRS!(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
         config  = launch_configuration(kernel.fun)
         threads = Base.min(length(A), config.threads, 256) # strangely seems to be faster when defaulting to 256 threads
         blocks  = cld(length(A), threads)
 
-        kernel(A, count, prob, rng.state, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim; threads=threads, blocks=blocks)
+        kernel(A, count, prob, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim; threads=threads, blocks=blocks)
     else
         throw(DimensionMismatch("`count` and `prob` need have size compatible with A"))
     end
