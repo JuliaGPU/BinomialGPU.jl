@@ -1,6 +1,9 @@
 ## custom samplers for generating binomially distributed CuArrays
 
-
+function TwoFloat32s(a::Integer)
+    inv32 = 2.32830643653869628906f-10
+    return a >> 32 * inv32, a & ~ -2^32 * inv32
+end
 
 ## COV_EXCL_START
 
@@ -70,9 +73,16 @@ function kernel_BTRS!(
         if n <= 17
             k = 0
             ctr = 1
-            while ctr <= n
-                rand(Float32) < p && (k += 1)
+            while true
+                u, v = TwoFloat32s(rand(UInt64))
+
+                u < p && (k += 1)
                 ctr += 1
+                ctr == n && break
+
+                v < p && (k += 1)
+                ctr += 1
+                ctr == n && break
             end
             A[i] = k
             return
@@ -84,7 +94,14 @@ function kernel_BTRS!(
             geom_sum = 0f0
             num_geom = 0
             while true
-                geom      = ceil(log(rand(Float32)) / logp)
+                u, v = TwoFloat32s(rand(UInt64))
+
+                geom      = ceil(log(u) / logp)
+                geom_sum += geom
+                geom_sum > n && break
+                num_geom += 1
+
+                geom      = ceil(log(v) / logp)
                 geom_sum += geom
                 geom_sum > n && break
                 num_geom += 1
@@ -110,8 +127,8 @@ function kernel_BTRS!(
         m       = floor((n + 1) * p)
 
         while true
-            usample = rand(Float32) - 0.5f0
-            vsample = rand(Float32)
+            usample, vsample = TwoFloat32s(rand(UInt64))
+            usample -= 0.5f0
 
             us = 0.5f0 - abs(usample)
             ks = floor((2 * a / us + b) * usample + c)
