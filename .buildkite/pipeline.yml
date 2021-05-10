@@ -23,4 +23,4 @@ steps:
 
 env:
   JULIA_PKG_SERVER: "" # it often struggles with our large artifacts
-  CODECOV_TOKEN: "ea64fa23-14d4-4123-a7ce-b4f4208cd455"
+  CODECOV_TOKEN: "17a4c091-2903-476b-8609-c613436a30f8"
