@@ -3,7 +3,7 @@
 gpuarrays_rng() = GPUArrays.default_rng(CuArray)
 
 const BinomialType = Union{Type{<:Integer}}
-const BinomialArray = DenseCuArray{<:Integer}
+const BinomialArray = AnyCuArray{<:Integer}
 
 ## exported functions: in-place
 rand_binomial!(A::BinomialArray; kwargs...) = rand_binomial!(gpuarrays_rng(), A; kwargs...)
