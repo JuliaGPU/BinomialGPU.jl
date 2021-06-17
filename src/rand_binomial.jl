@@ -2,7 +2,7 @@
 # to include binomial distributions
 
 const BinomialType = Union{Type{<:Integer}}
-const BinomialArray = DenseCuArray{<:Integer}
+const BinomialArray = AnyCuArray{<:Integer}
 
 ## exported functions: in-place
 rand_binomial!(A::AnyCuArray; kwargs...) =
