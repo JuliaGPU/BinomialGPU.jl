@@ -32,6 +32,91 @@ end
 
 
 # BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
+
+## Kernel for scalar parameters
+function kernel_BTRS_scalar!(A, n, p, seed::UInt32)
+    tid    = threadIdx().x
+    bid    = blockIdx().x
+    offset = (bid - 1) * blockDim().x
+
+    @inbounds Random.seed!(seed)
+    k = 0
+    while offset < length(A)
+        i = tid + offset
+
+        if p <= 0 || n <= 0
+            k = 0
+        elseif p >= 1
+            k = n
+        elseif n <= 17
+            k = 0
+            ctr = 1
+            while ctr <= n
+                rand(Float32) < p && (k += 1)
+                ctr += 1
+            end
+        elseif n * p < 10f0
+            logp = CUDA.log(1f0-p)
+            geom_sum = 0f0
+            k = 0
+            while true
+                geom = ceil(CUDA.log(rand(Float32)) / logp)
+                geom_sum += geom
+                geom_sum > n && break
+                k += 1
+            end
+        else
+            r       = p/(1f0-p)
+            s       = p*(1f0-p)
+    
+            stddev  = sqrt(n * s)
+            b       = 1.15f0 + 2.53f0 * stddev
+            a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
+            c       = n * p + 0.5f0
+            v_r     = 0.92f0 - 4.2f0 / b
+    
+            alpha   = (2.83f0 + 5.1f0 / b) * stddev;
+            m       = floor((n + 1) * p)
+
+            ks = 0f0
+    
+            while true
+                usample = rand(Float32) - 0.5f0
+                vsample = rand(Float32)
+    
+                us = 0.5f0 - abs(usample)
+                ks = floor((2 * a / us + b) * usample + c)
+    
+                if us >= 0.07f0 && vsample <= v_r
+                    break
+                end
+    
+                if ks < 0 || ks > n
+                    continue
+                end
+    
+                v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
+                ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
+                     (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
+                     (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
+                     stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
+                if v2 <= ub
+                    break
+                end
+            end
+            k = Int(ks)
+        end
+
+        if i <= length(A)
+            @inbounds A[i] = k
+        end
+        offset += (blockDim().x - 1) * gridDim().x
+    end
+    return nothing
+end
+
+
+## Kernel for arrays of parameters
 function kernel_BTRS!(A, count, prob, randstates, R1, R2, Rp, Ra, count_dim_larger_than_prob_dim)
     i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
 

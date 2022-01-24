@@ -34,10 +34,14 @@ end
 
 # constant parameters
 function rand_binom!(rng, A::BinomialArray, count::Integer, prob::Number)
-    # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
-    ns = CUDA.fill(Int(count), size(A))
-    ps = CUDA.fill(Float32(prob), size(A))
-    return rand_binom!(rng, A, ns, ps)
+    seed    = rand(UInt32)
+    kernel  = @cuda launch=false kernel_BTRS_scalar!(A, count, Float32(prob), seed)
+    config  = launch_configuration(kernel.fun)
+    threads = min(config.threads, length(A))
+    blocks  = min(config.blocks, cld(length(A), threads))
+
+    kernel(A, count, Float32(prob), seed; threads=threads, blocks=blocks)
+    return A
 end
 
 # arrays of parameters
