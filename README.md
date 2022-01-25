@@ -52,7 +52,7 @@ julia> rand_binomial(count = counts, prob = probs)
  4   0
  3  18
 ```
-The function with exclamation mark samples random numbers in place:
+The function with exclamation mark samples random numbers in-place:
 ```julia
 julia> using CUDA
 julia> A = CUDA.zeros(Int, 4, 4);
