@@ -64,7 +64,7 @@ end
 # dispatching on parameter types
 
 ## constant (scalar) parameters
-function rand_binom!(rng, A::BinomialArray, count::Integer, prob::Number)
+function rand_binom!(rng, A::BinomialArray, count::Integer, prob::AbstractFloat)
     kernel  = @cuda launch=false kernel_BTRS_scalar!(
         A, count, Float32(prob), rng.seed, rng.counter
     )
@@ -82,14 +82,15 @@ function rand_binom!(rng, A::BinomialArray, count::Integer, prob::Number)
 end
 
 ## arrays of parameters
-function rand_binom!(rng, A::BinomialArray, count::AbstractArray{<:Integer}, prob::Number)
+function rand_binom!(rng, A::BinomialArray, count::AbstractArray{<:Integer}, prob::AbstractFloat)
     # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
     cucount = cu(count)
     ps = CUDA.fill(Float32(prob), size(A))
     return rand_binom!(rng, A, cucount, ps)
 end
 
-function rand_binom!(rng, A::BinomialArray, count::Integer, prob::AbstractArray{<:Number})
+function rand_binom!(
+    rng, A::BinomialArray, count::Integer, prob::AbstractArray{<:AbstractFloat})
     # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
     ns = CUDA.fill(Int(count), size(A))
     cuprob  = cu(prob)
