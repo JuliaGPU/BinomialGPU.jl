@@ -3,40 +3,80 @@
 [![Build status](https://badge.buildkite.com/70a8c11259658ad6f836a4981791ed144bac80e65302291d0d.svg?branch=master)](https://buildkite.com/julialang/binomialgpu-dot-jl)
 [![Coverage](https://codecov.io/gh/JuliaGPU/BinomialGPU.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGPU/BinomialGPU.jl)
 
-This package provides a function `rand_binomial!` to produce `CuArrays` with binomially distributed entries, analogous to `CUDA.rand_poisson!` for Poisson-distributed ones.
+This package exports two functions `rand_binomial` and `rand_binomial!` to produce `CuArrays` with binomially distributed entries, analogous to `CUDA.rand_poisson` and `CUDA.rand_poisson!` for Poisson-distributed ones.
 
 
 ## Installation
 
-Use the built-in package manager:
+In a Julia 1.6 or 1.7 REPL, type `]` to use the built-in package manager and then run:
 
 ```julia
-import Pkg; Pkg.add("BinomialGPU")
+pkg> add BinomialGPU
 ```
 
 
 ## Usage
 
-Sample `CuArrays` with binomial random variates in-place:
+Sample `CuArrays` with binomial random variates of various dimensions:
 ```julia
-using CUDA, BinomialGPU
-
-A = CUDA.zeros(Int, 16)
-rand_binomial!(A, count = 10, prob = 0.5)
+julia> using BinomialGPU
+julia> rand_binomial(3, count = 10, prob = 0.5)
+3-element CuArray{Int64, 1, CUDA.Mem.DeviceBuffer}:
+ 4
+ 3
+ 7
+julia> rand_binomial(4, 4, count = 10, prob = 0.5)
+4×4 CuArray{Int64, 2, CUDA.Mem.DeviceBuffer}:
+ 5  5  6  4
+ 5  7  6  7
+ 6  4  4  6
+ 7  2  4  5
 ```
-The function currently also supports broadcast over arrays of parameters of the same size as the one to be filled:
+The function also supports arrays of parameters of suitable (compatible) sizes:
 ```julia
-A      = CUDA.zeros(Int, 8)
-counts = [1,2,4,8,16,32,64,128]
-probs  = CUDA.rand(8)
-rand_binomial!(A, count = counts, prob = probs)
+julia> counts = [5, 10, 20]
+julia> probs = [0.3, 0.4, 0.8]
+julia> rand_binomial(count = counts, prob = probs)
+3-element CuArray{Int64, 1, CUDA.Mem.DeviceBuffer}:
+  0
+  7
+ 19
+julia> probs = CUDA.rand(3, 2);
+julia> rand_binomial(count = counts, prob = probs)
+3×2 CuArray{Int64, 2, CUDA.Mem.DeviceBuffer}:
+ 3   1
+ 4   0
+ 3  18
 ```
-as well as broadcasts over arrays of parameters whose dimensions are a prefix of the dimensions of A, e.g.
+The function with exclamation mark samples random numbers in place:
 ```julia
-A      = CUDA.zeros(Int, (2, 4, 8))
-counts = rand(1:128, 2, 4)
-probs  = CUDA.rand(2)
-rand_binomial!(A, count = counts, prob = probs)
+julia> using CUDA
+julia> A = CUDA.zeros(Int, 4, 4);
+julia> rand_binomial!(A, count = 10, prob = 0.5)
+4×4 CuArray{Int64, 2, CUDA.Mem.DeviceBuffer}:
+ 6  4  1  8
+ 4  6  6  6
+ 4  3  2  4
+ 5  7  3  5
+```
+This also allows for non-standard types to be preserved:
+```julia
+julia> A = CUDA.zeros(UInt16, 4, 4);
+julia> rand_binomial!(A, count = 10, prob = 0.5)
+4×4 CuArray{UInt16, 2, CUDA.Mem.DeviceBuffer}:
+ 0x0005  0x0004  0x0003  0x0005
+ 0x0006  0x0006  0x0006  0x0003
+ 0x0006  0x0005  0x0006  0x0005
+ 0x0007  0x0005  0x0006  0x0006
+```
+Alternatively, pass the desired type as the first argument:
+```julia
+julia> rand_binomial(UInt32, 4, 4, count = 10, prob = 0.5)
+4×4 CuArray{UInt32, 2, CUDA.Mem.DeviceBuffer}:
+ 0x00000004  0x00000005  0x00000008  0x00000005
+ 0x00000003  0x00000007  0x00000005  0x00000005
+ 0x00000007  0x00000005  0x00000005  0x00000004
+ 0x00000001  0x00000005  0x00000005  0x00000003
 ```
 
 
