@@ -100,7 +100,7 @@ function rand_binom!(
     rng, 
     A::BinomialArray, 
     count::AbstractArray{<:Integer}, 
-    prob::AbstractArray{<:Number}
+    prob::AbstractArray{<:AbstractFloat}
 )
     cucount = cu(count)
     cuprob  = cu(prob)
