@@ -18,7 +18,7 @@ function stirling_approx_tail(k)::Float32
     elseif k == 5
         return 0.0138761288230707f0
     elseif k == 6
-        return 0.0118967099458917f0
+        return 0.0118967099458917f0Newrand
     elseif k == 7
         return 0.0104112652619720f0
     elseif k == 8
@@ -29,6 +29,7 @@ function stirling_approx_tail(k)::Float32
     kp1sq = (k + 1f0)^2;
     return (1.0f0 / 12 - (1.0f0 / 360 - 1.0f0 / 1260 / kp1sq) / kp1sq) / (k + 1)
 end
+
 
 
 # BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
@@ -267,7 +268,5 @@ function kernel_naive_full!(A, count, prob, randstates)
     end
     return
 end
-
-
 
 ## COV_EXCL_STOP
