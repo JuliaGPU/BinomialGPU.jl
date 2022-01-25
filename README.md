@@ -3,7 +3,7 @@
 [![Build status](https://badge.buildkite.com/70a8c11259658ad6f836a4981791ed144bac80e65302291d0d.svg?branch=master)](https://buildkite.com/julialang/binomialgpu-dot-jl)
 [![Coverage](https://codecov.io/gh/JuliaGPU/BinomialGPU.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGPU/BinomialGPU.jl)
 
-This package provides functions `rand_binomial` and `rand_binomial!` to produce `CuArrays` with binomially distributed entries, analogous to `CUDA.rand_poisson` and `CUDA.rand_poisson!` for Poisson-distributed ones.
+This package exports two functions `rand_binomial` and `rand_binomial!` to produce `CuArrays` with binomially distributed entries, analogous to `CUDA.rand_poisson` and `CUDA.rand_poisson!` for Poisson-distributed ones.
 
 
 ## Installation
