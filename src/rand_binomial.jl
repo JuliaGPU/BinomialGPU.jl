@@ -3,34 +3,67 @@
 const BinomialType = Union{Type{<:Integer}}
 const BinomialArray = AnyCuArray{<:Integer}
 
-## exported functions: in-place
+
+# RNG interface
+rand_binomial(rng, T::Type, dims::Dims; kwargs...) =
+    rand_binomial!(rng, CuArray{T}(undef, dims); kwargs...)
+    
+## specify default type
+rand_binomial(rng, dims::Dims; kwargs...) =
+    rand_binomial(rng, Int, dims; kwargs...)
+
+## support all dimension specifications
+rand_binomial(rng, dim1::Integer, dims::Integer...; kwargs...) =
+    rand_binomial(rng, Dims((dim1, dims...)); kwargs...)
+
+## ... and with a type
+rand_binomial(rng, T::Type, dim1::Integer, dims::Integer...; kwargs...) =
+    rand_binomial(rng, T, Dims((dim1, dims...)); kwargs...)
+
+
+# RNG-less API
+
+## in-place
 rand_binomial!(A::BinomialArray; kwargs...) = rand_binomial!(cuda_rng(), A; kwargs...)
 
 rand_binomial!(A::AnyCuArray; kwargs...) =
     error("BinomialGPU.jl does not support generating binomially-distributed random numbers of type $(eltype(A))")
 
-## unexported functions: out of place
-rand_binomial(T::BinomialType, dims::Dims; kwargs...) = rand_binomial(cuda_rng(), T, dims; kwargs...)
-
-rand_binomial(T::BinomialType, dim1::Integer, dims::Integer...; kwargs...) =
-    rand_binomial(cuda_rng(), T, Dims((dim1, dims...)); kwargs...)
-
+## out-of-place
 rand_binomial(T::Type, dims::Dims; kwargs...) = rand_binomial!(CuArray{T}(undef, dims...); kwargs...)
 
+## support all dimension specifications
 rand_binomial(T::Type, dim1::Integer, dims::Integer...; kwargs...) =
     rand_binomial!(CuArray{T}(undef, dim1, dims...); kwargs...)
 
+## untyped out-of-place
 rand_binomial(dim1::Integer, dims::Integer...; kwargs...) =
     rand_binomial(cuda_rng(), Dims((dim1, dims...)); kwargs...)
 
-## main internal function
+
+# explicit keyword arguments
+
+## without dimension specifications
+function rand_binomial(; count, prob)
+    countsize = size(count)
+    probsize = size(prob)
+    if isempty(countsize) && isempty(probsize)
+        return rand_binomial(1; count=count, prob=prob)
+    elseif length(countsize) > length(probsize)
+        return rand_binomial(countsize...; count=count, prob=prob)
+    else
+        return rand_binomial(probsize...; count=count, prob=prob)
+    end
+end
+
 function rand_binomial!(rng, A::BinomialArray; count, prob)
     return rand_binom!(rng, A, count, prob)
 end
 
-## dispatching on parameter types
 
-# constant parameters
+# dispatching on parameter types
+
+## constant (scalar) parameters
 function rand_binom!(rng, A::BinomialArray, count::Integer, prob::Number)
     kernel  = @cuda launch=false kernel_BTRS_scalar!(
         A, count, Float32(prob), rng.seed, rng.counter
@@ -48,7 +81,7 @@ function rand_binom!(rng, A::BinomialArray, count::Integer, prob::Number)
     return A
 end
 
-# arrays of parameters
+## arrays of parameters
 function rand_binom!(rng, A::BinomialArray, count::AbstractArray{<:Integer}, prob::Number)
     # revert to full parameter case (this could be suboptimal, as a table-based method should in principle be faster)
     cucount = cu(count)
