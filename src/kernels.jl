@@ -31,116 +31,243 @@ function stirling_approx_tail(k)::Float32
 end
 
 
-# BTRS algorithm, adapted from the tensorflow library 
-# (github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
-function kernel_BTRS!(
-    A, count, prob, 
-    R1, R2, Rp, Ra, 
-    count_dim_larger_than_prob_dim, 
-    seed::UInt32
-)
-    i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+# BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
 
-    @inbounds Random.seed!(seed)
+## Kernel for scalar parameters
+function kernel_BTRS_scalar!(A, n, p, seed::UInt32, counter::UInt32)
+    device_rng = Random.default_rng()
 
-    @inbounds if i <= length(A)
-        I  = Ra[i]
-        Ip = Rp[I[1]]
-        I1 = R1[Ip[1]]
-        I2 = R2[Ip[2]]
+    # initialize the state
+    @inbounds Random.seed!(device_rng, seed, counter)
 
-        if count_dim_larger_than_prob_dim
-            n = count[CartesianIndex(I1, I2)]
-            p = prob[I1]
-        else
-            n = count[I1]
-            p = prob[CartesianIndex(I1, I2)]
-        end
+    # grid-stride loop
+    tid    = threadIdx().x
+    window = (blockDim().x - 1i32) * gridDim().x
+    offset = (blockIdx().x - 1i32) * blockDim().x
+
+    k = 0
+    while offset < length(A)
+        i = tid + offset
 
         # edge cases
         if p <= 0 || n <= 0
-            A[i] = 0
-            return
+            k = 0
         elseif p >= 1
-            A[i] = n
-            return
-        end
-        
+            k = n
         # Use naive algorithm for n <= 17
-        if n <= 17
+        elseif n <= 17
             k = 0
             ctr = 1
             while ctr <= n
                 rand(Float32) < p && (k += 1)
                 ctr += 1
             end
-            A[i] = k
-            return
-        end
-
         # Use inversion algorithm for n*p < 10
-        if n * p < 10f0
-            logp = log(1f0-p)
+        elseif n * p < 10f0
+            logp = CUDA.log(1f0-p)
             geom_sum = 0f0
-            num_geom = 0
+            k = 0
             while true
-                geom      = ceil(log(rand(Float32)) / logp)
+                geom = ceil(CUDA.log(rand(Float32)) / logp)
                 geom_sum += geom
                 geom_sum > n && break
-                num_geom += 1
+                k += 1
             end
-            A[i] = num_geom
-            return
-        end
-
         # BTRS algorithm
-        # BTRS approximations work well for p <= 0.5
-        (invert = p > 0.5f0) && (p = 1f0 - p)
+        else
+            # BTRS approximations work well for p <= 0.5
+            # invert p and set `invert` flag
+            (invert = p > 0.5f0) && (p = 1f0 - p)
 
-        r       = p/(1f0-p)
-        s       = p*(1f0-p)
+            r       = p/(1f0-p)
+            s       = p*(1f0-p)
+    
+            stddev  = sqrt(n * s)
+            b       = 1.15f0 + 2.53f0 * stddev
+            a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
+            c       = n * p + 0.5f0
+            v_r     = 0.92f0 - 4.2f0 / b
+    
+            alpha   = (2.83f0 + 5.1f0 / b) * stddev;
+            m       = floor((n + 1) * p)
 
-        stddev  = sqrt(n * s)
-        b       = 1.15f0 + 2.53f0 * stddev
-        a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
-        c       = n * p + 0.5f0
-        v_r     = 0.92f0 - 4.2f0 / b
-
-        alpha   = (2.83f0 + 5.1f0 / b) * stddev;
-        m       = floor((n + 1) * p)
-
-        while true
-            usample = rand(Float32) - 0.5f0
-            vsample = rand(Float32)
-
-            us = 0.5f0 - abs(usample)
-            ks = floor((2 * a / us + b) * usample + c)
-
-            if us >= 0.07f0 && vsample <= v_r
-                break
+            ks = 0f0
+    
+            while true
+                usample = rand(Float32) - 0.5f0
+                vsample = rand(Float32)
+    
+                us = 0.5f0 - abs(usample)
+                ks = floor((2 * a / us + b) * usample + c)
+    
+                if us >= 0.07f0 && vsample <= v_r
+                    break
+                end
+    
+                if ks < 0 || ks > n
+                    continue
+                end
+    
+                v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
+                ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
+                     (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
+                     (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
+                     stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
+                if v2 <= ub
+                    break
+                end
             end
-
-            if ks < 0 || ks > n
-                continue
-            end
-
-            v2 = log(vsample * alpha / (a / (us * us) + b))
-            ub = (m + 0.5f0) * log((m + 1) / (r * (n - m + 1))) +
-                 (n + 1) * log((n - m + 1) / (n - ks + 1)) +
-                 (ks + 0.5f0) * log(r * (n - ks + 1) / (ks + 1)) +
-                 stirling_approx_tail(m) + stirling_approx_tail(n - m) - 
-                 stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
-            if v2 <= ub
-                break
-            end
+            invert && (ks = n - ks)
+            k = Int(ks)
         end
 
-        # if p = 1 - p[i] was used, undo inversion
-        invert && (ks = n - ks)
-        A[i] = Int(ks);
-        nothing
-    end#if
+        if i <= length(A)
+            @inbounds A[i] = k
+        end
+        offset += window
+    end
+    return nothing
+end
+
+
+## Kernel for arrays of parameters
+function kernel_BTRS!(
+    A, 
+    count, prob, 
+    seed::UInt32, counter::UInt32, 
+    R1, R2, Rp, Ra, 
+    count_dim_larger_than_prob_dim
+)
+    device_rng = Random.default_rng()
+
+    # initialize the state
+    @inbounds Random.seed!(device_rng, seed, counter)
+
+    # grid-stride loop
+    tid    = threadIdx().x
+    window = (blockDim().x - 1i32) * gridDim().x
+    offset = (blockIdx().x - 1i32) * blockDim().x
+
+    while offset < length(A)
+        i = tid + offset
+
+        # PARAMETER LOOKUP
+        if i <= length(A)
+            @inbounds I  = Ra[i]
+            @inbounds Ip = Rp[I[1]]
+            @inbounds I1 = R1[Ip[1]]
+            @inbounds I2 = R2[Ip[2]]
+
+            if count_dim_larger_than_prob_dim
+                @inbounds n = count[CartesianIndex(I1, I2)]
+                @inbounds p = prob[I1]
+            else
+                @inbounds n = count[I1]
+                @inbounds p = prob[CartesianIndex(I1, I2)]
+            end
+        else
+            n = 0
+            p = 0
+        end
+
+        # SAMPLER
+        # edge cases
+        if p <= 0 || n <= 0
+            k = 0
+        elseif p >= 1
+            k = n
+        # Use naive algorithm for n <= 17
+        elseif n <= 17
+            k = 0
+            ctr = 1
+            while ctr <= n
+                rand(Float32) < p && (k += 1)
+                ctr += 1
+            end
+        # Use inversion algorithm for n*p < 10
+        elseif n * p < 10f0
+            logp = CUDA.log(1f0-p)
+            geom_sum = 0f0
+            k = 0
+            while true
+                geom = ceil(CUDA.log(rand(Float32)) / logp)
+                geom_sum += geom
+                geom_sum > n && break
+                k += 1
+            end
+        # BTRS algorithm
+        else
+            # BTRS approximations work well for p <= 0.5
+            # invert p and set `invert` flag
+            (invert = p > 0.5f0) && (p = 1f0 - p)
+
+            r       = p/(1f0-p)
+            s       = p*(1f0-p)
+    
+            stddev  = sqrt(n * s)
+            b       = 1.15f0 + 2.53f0 * stddev
+            a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
+            c       = n * p + 0.5f0
+            v_r     = 0.92f0 - 4.2f0 / b
+    
+            alpha   = (2.83f0 + 5.1f0 / b) * stddev;
+            m       = floor((n + 1) * p)
+
+            ks = 0f0
+    
+            while true
+                usample = rand(Float32) - 0.5f0
+                vsample = rand(Float32)
+    
+                us = 0.5f0 - abs(usample)
+                ks = floor((2 * a / us + b) * usample + c)
+    
+                if us >= 0.07f0 && vsample <= v_r
+                    break
+                end
+    
+                if ks < 0 || ks > n
+                    continue
+                end
+    
+                v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
+                ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
+                     (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
+                     (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
+                     stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
+                if v2 <= ub
+                    break
+                end
+            end
+            invert && (ks = n - ks)
+            k = Int(ks)
+        end
+
+        if i <= length(A)
+            @inbounds A[i] = k
+        end
+        offset += window
+    end
+    return nothing
+end
+
+
+## old, unused kernels (for reference)
+
+#naive algorithm, full
+function kernel_naive_full!(A, count, prob, randstates)
+    index1  = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+    stride1 = blockDim().x * gridDim().x
+
+    @inbounds for i in index1:stride1:length(A)
+        A[i] = 0
+        for m in 1:count[i]
+            @inbounds A[i] += GPUArrays.gpu_rand(Float32, CUDA.CuKernelContext(), randstates) < prob[i]
+        end
+    end
     return
 end
+
+
 
 ## COV_EXCL_STOP
