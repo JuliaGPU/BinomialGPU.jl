@@ -3,7 +3,11 @@
 [![Build status](https://badge.buildkite.com/70a8c11259658ad6f836a4981791ed144bac80e65302291d0d.svg?branch=master)](https://buildkite.com/julialang/binomialgpu-dot-jl)
 [![Coverage](https://codecov.io/gh/JuliaGPU/BinomialGPU.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGPU/BinomialGPU.jl)
 
-This package exports two functions `rand_binomial` and `rand_binomial!` to produce `CuArrays` with binomially distributed entries, analogous to `CUDA.rand_poisson` and `CUDA.rand_poisson!` for Poisson-distributed ones.
+This package exports two functions `rand_binomial` and `rand_binomial!` that produce `CuArrays` with binomially distributed elements, analogous to `CUDA.rand_poisson` and `CUDA.rand_poisson!` for Poisson-distributed ones.
+The sampling occurs natively on the GPU and is implemented using custom GPU kernels.  
+
+The performance of this implementation seems to be very competitive with other libraries.
+Sampling a 1024x1024 matrix on an RTX2070 GPU: BinomialGPU.jl 0.8ms, PyTorch 11ms, CuPy 18ms, tensorflow 400ms. Benchmarking results for other samplers are very welcome; please open an issue if you find one, especially if is faster than this package.
 
 
 ## Installation
@@ -78,8 +82,3 @@ julia> rand_binomial(UInt32, 4, 4, count = 10, prob = 0.5)
  0x00000007  0x00000005  0x00000005  0x00000004
  0x00000001  0x00000005  0x00000005  0x00000003
 ```
-
-
-## Issues
-
-* Are there any other samplers that are comparably fast or faster? I compared the following: sample an array of size `(1024, 1024)` with `count = 128` and `prob` of size `(1024, 1024)` with uniformly drawn entries. Timings on an RTX2070 card: BinomialGPU.jl 0.8ms, PyTorch 11ms, CuPy 18ms, tensorflow 400ms. Timings for other samplers are very welcome; please open an issue if you find one.
