@@ -34,13 +34,20 @@ end
 
 # constant parameters
 function rand_binom!(rng, A::BinomialArray, count::Integer, prob::Number)
-    seed    = rand(UInt32)
-    kernel  = @cuda launch=false kernel_BTRS_scalar!(A, count, Float32(prob), seed)
+    myrng = CUDA.default_rng()
+    kernel  = @cuda launch=false kernel_BTRS_scalar!(
+        A, count, Float32(prob), myrng.seed, myrng.counter
+    )
     config  = launch_configuration(kernel.fun)
-    threads = min(config.threads, length(A))
+    threads = max(32, min(config.threads, length(A)))
     blocks  = min(config.blocks, cld(length(A), threads))
+    kernel(A, count, Float32(prob), myrng.seed, myrng.counter; threads=threads, blocks=blocks)
 
-    kernel(A, count, Float32(prob), seed; threads=threads, blocks=blocks)
+    new_counter = Int64(myrng.counter) + length(A)
+    overflow, remainder = fldmod(new_counter, typemax(UInt32))
+    myrng.seed += overflow     # XXX: is this OK?
+    myrng.counter = remainder
+
     return A
 end
 

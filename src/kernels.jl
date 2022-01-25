@@ -34,12 +34,17 @@ end
 # BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
 
 ## Kernel for scalar parameters
-function kernel_BTRS_scalar!(A, n, p, seed::UInt32)
-    tid    = threadIdx().x
-    bid    = blockIdx().x
-    offset = (bid - 1) * blockDim().x
+function kernel_BTRS_scalar!(A, n, p, seed::UInt32, counter::UInt32)
+    device_rng = Random.default_rng()
 
-    @inbounds Random.seed!(seed)
+    # initialize the state
+    @inbounds Random.seed!(device_rng, seed, counter)
+
+    # grid-stride loop
+    tid    = threadIdx().x
+    window = (blockDim().x - 1i32) * gridDim().x
+    offset = (blockIdx().x - 1i32) * blockDim().x
+
     k = 0
     while offset < length(A)
         i = tid + offset
@@ -110,7 +115,7 @@ function kernel_BTRS_scalar!(A, n, p, seed::UInt32)
         if i <= length(A)
             @inbounds A[i] = k
         end
-        offset += (blockDim().x - 1) * gridDim().x
+        offset += window
     end
     return nothing
 end
