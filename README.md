@@ -69,7 +69,7 @@ julia> rand_binomial!(A, count = 10, prob = 0.5)
  0x0006  0x0005  0x0006  0x0005
  0x0007  0x0005  0x0006  0x0006
 ```
-To obtain different types directly, pass the desired type as the first argument:
+Alternatively, pass the desired type as the first argument:
 ```julia
 julia> rand_binomial(UInt32, 4, 4, count = 10, prob = 0.5)
 4×4 CuArray{UInt32, 2, CUDA.Mem.DeviceBuffer}:
