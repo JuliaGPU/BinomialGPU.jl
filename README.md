@@ -42,5 +42,4 @@ rand_binomial!(A, count = counts, prob = probs)
 
 ## Issues
 
-* The speed is slower when using optimal thread allocation than when defaulting to 256 threads. See [issue #2](https://github.com/JuliaGPU/BinomialGPU.jl/issues/2)
 * Are there any other samplers that are comparably fast or faster? I compared the following: sample an array of size `(1024, 1024)` with `count = 128` and `prob` of size `(1024, 1024)` with uniformly drawn entries. Timings on an RTX2070 card: BinomialGPU.jl 0.8ms, PyTorch 11ms, CuPy 18ms, tensorflow 400ms. Timings for other samplers are very welcome; please open an issue if you find one.
