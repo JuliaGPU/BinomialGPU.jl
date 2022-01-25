@@ -8,10 +8,10 @@ This package exports two functions `rand_binomial` and `rand_binomial!` to produ
 
 ## Installation
 
-Use the built-in package manager:
+In a Julia 1.6 or 1.7 REPL, type `]` to use the built-in package manager and then run:
 
 ```julia
-import Pkg; Pkg.add("BinomialGPU")
+pkg> add BinomialGPU
 ```
 
 
@@ -19,7 +19,7 @@ import Pkg; Pkg.add("BinomialGPU")
 
 Sample `CuArrays` with binomial random variates of various dimensions:
 ```julia
-julia> using CUDA, BinomialGPU
+julia> using BinomialGPU
 julia> rand_binomial(3, count = 10, prob = 0.5)
 3-element CuArray{Int64, 1, CUDA.Mem.DeviceBuffer}:
  4
@@ -50,6 +50,7 @@ julia> rand_binomial(count = counts, prob = probs)
 ```
 The function with exclamation mark samples random numbers in place:
 ```julia
+julia> using CUDA
 julia> A = CUDA.zeros(Int, 4, 4);
 julia> rand_binomial!(A, count = 10, prob = 0.5)
 4×4 CuArray{Int64, 2, CUDA.Mem.DeviceBuffer}:
