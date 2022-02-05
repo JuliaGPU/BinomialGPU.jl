@@ -167,7 +167,7 @@ function kernel_BTRS!(
             end
         else
             n = 0
-            p = 0
+            p = 0f0
         end
 
         # SAMPLER
