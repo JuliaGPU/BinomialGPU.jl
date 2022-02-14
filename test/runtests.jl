@@ -1,5 +1,7 @@
 using BinomialGPU
 using CUDA
+using Distributions
+using Statistics
 
 using BenchmarkTools
 using Test
@@ -179,4 +181,39 @@ using Test
             end
         end
     end # out-of-place
+
+    @testset "Distributional tests" begin
+        function mean_var_CI(m, S2, n, p, N, α)
+            truemean = n*p
+            truevar = n*p*(1-p)
+            a = quantile(Normal(), α/2)
+            b = quantile(Normal(), 1-α/2)
+            c = quantile(Chisq(N-1), α/2)
+            d = quantile(Chisq(N-1), 1-α/2)
+            @test a <= (m - truemean)/sqrt(N*truevar) <= b
+            @test c <= (N-1)*S2/truevar <= d
+        end
+        @testset "Scalar parameters" begin
+            function test_mean_variance(N, n, p)
+                CUDA.@sync A = rand_binomial(N, count = n, prob = p)
+                mean_var_CI(mean(A), var(A), n, p, N, 1e-3)
+            end
+            N = 2^20
+            @testset "n = $n, p = $p" for n in [1, 10, 20, 50, 100, 200, 500, 1000],
+                p in 0.1:0.1:0.9
+                test_mean_variance(N, n, p)
+            end
+        end
+        @testset "Arrays of parameters" begin
+            function test_mean_variance(N, n, p)
+                CUDA.@sync A = rand_binomial(N, count = fill(n, N), prob = fill(p, N))
+                mean_var_CI(mean(A), var(A), n, p, N, 1e-3)
+            end
+            N = 2^20
+            @testset "n = $n, p = $p" for n in [1, 10, 20, 50, 100, 200, 500, 1000],
+                p in 0.1:0.1:0.9
+                test_mean_variance(N, n, p)
+            end
+        end
+    end # Distributional tests
 end
