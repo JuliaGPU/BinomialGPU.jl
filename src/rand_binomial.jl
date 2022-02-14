@@ -77,7 +77,6 @@ function rand_binom!(rng, A::BinomialArray, count::Integer, prob::AbstractFloat)
     end
 
     invert = prob > 0.5f0
-    @show invert
     if invert
         p = 1 - prob
     else
