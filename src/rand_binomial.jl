@@ -65,20 +65,57 @@ end
 
 ## constant (scalar) parameters
 function rand_binom!(rng, A::BinomialArray, count::Integer, prob::AbstractFloat)
-    kernel  = @cuda launch=false kernel_BTRS_scalar!(
-        A, count, Float32(prob), rng.seed, rng.counter
-    )
+    n = count
+
+    # edge cases
+    if prob <= 0 || n <= 0
+        A .= 0
+        return A
+    elseif prob >= 1
+        A .= n
+        return A
+    end
+
+    invert = prob > 0.5f0
+    @show invert
+    if invert
+        p = 1 - prob
+    else
+        p = prob
+    end
+
+    # Use naive algorithm for n <= 17
+    if n <= 17
+        kernel = @cuda launch=false kernel_naive_scalar!(
+            A, n, Float32(p), rng.seed, rng.counter
+        )
+    # Use inversion algorithm for n*p < 10
+    elseif n * p < 10f0
+        kernel = @cuda launch=false kernel_inversion_scalar!(
+            A, n, Float32(p), rng.seed, rng.counter
+        )
+    # BTRS algorithm
+    else
+        kernel = @cuda launch=false kernel_BTRS_scalar!(
+            A, n, Float32(p), rng.seed, rng.counter
+        )
+    end
+
     config  = launch_configuration(kernel.fun)
     threads = max(32, min(config.threads, length(A)))
     blocks  = min(config.blocks, cld(length(A), threads))
-    kernel(A, count, Float32(prob), rng.seed, rng.counter; threads=threads, blocks=blocks)
+    kernel(A, n, Float32(p), rng.seed, rng.counter; threads=threads, blocks=blocks)
 
     new_counter = Int64(rng.counter) + length(A)
     overflow, remainder = fldmod(new_counter, typemax(UInt32))
     rng.seed += overflow     # XXX: is this OK?
     rng.counter = remainder
 
-    return A
+    if invert
+        return n .- A
+    else
+        return A
+    end
 end
 
 ## arrays of parameters
