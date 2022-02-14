@@ -269,9 +269,9 @@ function kernel_BTRS!(
 
         if i <= length(A)
             if invert
-                @inbounds A[i] = k
-            else
                 @inbounds A[i] = n - k
+            else
+                @inbounds A[i] = k
             end
         end
         offset += window
