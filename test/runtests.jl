@@ -94,22 +94,6 @@ using Test
             @test rand_binomial!(A, count = 2, prob = 1.5) == CUDA.fill(2, 256) # probabilities greater than 1 are equivalent to 1
             @test_throws MethodError rand_binomial!(A, count = 5., prob = 0.5) # non-integer counts throw an error
         end
-
-        @testset "benchmarks" begin
-            # benchmarks
-            A = CUDA.zeros(Int, 1024, 1024)
-            n = 128
-            p = 0.5
-            ns = CUDA.fill(128, (1024, 1024))
-            ps = CUDA.rand(1024, 1024)
-            println("")
-            println("Benchmarking constant parameter array: should run in less than 2ms on an RTX20xx card")
-            display(@benchmark CUDA.@sync rand_binomial!($A, count = $n, prob = $p))
-            println("")
-            println("Benchmarking full parameter array: should run in less than 2ms on an RTX20xx card")
-            display(@benchmark CUDA.@sync rand_binomial!($A, count = $ns, prob = $ps))
-            println("")
-        end
     end # in-place
 
     @testset "out-of-place" begin
@@ -216,4 +200,20 @@ using Test
             end
         end
     end # Distributional tests
+
+    @testset "benchmarks" begin
+        # benchmarks
+        A = CUDA.zeros(Int, 1024, 1024)
+        n = 128
+        p = 0.5
+        ns = CUDA.fill(128, (1024, 1024))
+        ps = CUDA.rand(1024, 1024)
+        println("")
+        println("Benchmarking constant parameter array: should run in less than 2ms on an RTX20xx card")
+        display(@benchmark CUDA.@sync rand_binomial!($A, count = $n, prob = $p))
+        println("")
+        println("Benchmarking full parameter array: should run in less than 2ms on an RTX20xx card")
+        display(@benchmark CUDA.@sync rand_binomial!($A, count = $ns, prob = $ps))
+        println("")
+    end
 end
