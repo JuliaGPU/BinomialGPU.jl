@@ -33,7 +33,68 @@ end
 
 # BTRS algorithm, adapted from the tensorflow library (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/random_binomial_op.cc)
 
-## Kernel for scalar parameters
+## Kernels for scalar parameters
+function kernel_naive_scalar!(A, n, p, seed::UInt32, counter::UInt32)
+    device_rng = Random.default_rng()
+
+    # initialize the state
+    @inbounds Random.seed!(device_rng, seed, counter)
+
+    # grid-stride loop
+    tid    = threadIdx().x
+    window = (blockDim().x - 1i32) * gridDim().x
+    offset = (blockIdx().x - 1i32) * blockDim().x
+
+    k = 0
+    while offset < length(A)
+        i = tid + offset
+        
+        k = 0
+        ctr = 1
+        while ctr <= n
+            rand(Float32) < p && (k += 1)
+            ctr += 1
+        end
+
+        if i <= length(A)
+            @inbounds A[i] = k
+        end
+        offset += window
+    end
+    return nothing
+end
+function kernel_inversion_scalar!(A, n, p, seed::UInt32, counter::UInt32)
+    device_rng = Random.default_rng()
+
+    # initialize the state
+    @inbounds Random.seed!(device_rng, seed, counter)
+
+    # grid-stride loop
+    tid    = threadIdx().x
+    window = (blockDim().x - 1i32) * gridDim().x
+    offset = (blockIdx().x - 1i32) * blockDim().x
+
+    k = 0
+    while offset < length(A)
+        i = tid + offset
+
+        logp = CUDA.log(1f0-p)
+        geom_sum = 0f0
+        k = 0
+        while true
+            geom = ceil(CUDA.log(rand(Float32)) / logp)
+            geom_sum += geom
+            geom_sum > n && break
+            k += 1
+        end
+
+        if i <= length(A)
+            @inbounds A[i] = k
+        end
+        offset += window
+    end
+    return nothing
+end
 function kernel_BTRS_scalar!(A, n, p, seed::UInt32, counter::UInt32)
     device_rng = Random.default_rng()
 
