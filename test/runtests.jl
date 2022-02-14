@@ -190,7 +190,7 @@ using Test
             b = quantile(Normal(), 1-α/2)
             c = quantile(Chisq(N-1), α/2)
             d = quantile(Chisq(N-1), 1-α/2)
-            @test sqrt(truevar/N)*a <= m - truemean <= sqrt(truevar/N)*b
+            @test a <= sqrt(N/truevar)*(m - truemean) <= b
             @test c <= (N-1)*S2/truevar <= d
         end
         @testset "Scalar parameters" begin
