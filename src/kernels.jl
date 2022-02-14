@@ -191,6 +191,9 @@ function kernel_BTRS!(
                 @inbounds n = count[I1]
                 @inbounds p = prob[CartesianIndex(I1, I2)]
             end
+            # BTRS approximations work well for p <= 0.5
+            # invert p and set `invert` flag
+            (invert = p > 0.5f0) && (p = 1-p)
         else
             n = 0
             p = 0f0
@@ -223,10 +226,6 @@ function kernel_BTRS!(
             end
         # BTRS algorithm
         else
-            # BTRS approximations work well for p <= 0.5
-            # invert p and set `invert` flag
-            (invert = p > 0.5f0) && (p = 1f0 - p)
-
             r       = p/(1f0-p)
             s       = p*(1f0-p)
     
@@ -265,12 +264,15 @@ function kernel_BTRS!(
                     break
                 end
             end
-            invert && (ks = n - ks)
             k = Int(ks)
         end
 
         if i <= length(A)
-            @inbounds A[i] = k
+            if invert
+                @inbounds A[i] = k
+            else
+                @inbounds A[i] = n - k
+            end
         end
         offset += window
     end
