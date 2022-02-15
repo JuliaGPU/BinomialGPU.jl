@@ -66,38 +66,47 @@ end
 ## constant (scalar) parameters
 function rand_binom!(rng, A::BinomialArray, count::Integer, prob::AbstractFloat)
     n = count
+    p = prob
 
+    invert = false
     # edge cases
-    if prob <= 0 || n <= 0
+    if p <= 0 || n <= 0
         A .= 0
         return A
-    elseif prob >= 1
+    elseif p >= 1
         A .= n
         return A
-    end
-
-    invert = prob > 0.5f0
-    if invert
-        p = 1 - prob
-    else
-        p = prob
-    end
-
     # Use naive algorithm for n <= 17
-    if n <= 17
+    elseif n <= 17
         kernel = @cuda launch=false kernel_naive_scalar!(
             A, n, Float32(p), rng.seed, rng.counter
         )
-    # Use inversion algorithm for n*p < 10
-    elseif n * p < 10f0
-        kernel = @cuda launch=false kernel_inversion_scalar!(
-            A, n, Float32(p), rng.seed, rng.counter
-        )
-    # BTRS algorithm
-    else
-        kernel = @cuda launch=false kernel_BTRS_scalar!(
-            A, n, Float32(p), rng.seed, rng.counter
-        )
+    elseif p <= 0.5
+        # Use inversion algorithm for n*p < 10
+        if n * p < 10f0
+            kernel = @cuda launch=false kernel_inversion_scalar!(
+                A, n, Float32(p), rng.seed, rng.counter
+            )
+        # BTRS algorithm
+        else
+            kernel = @cuda launch=false kernel_BTRS_scalar!(
+                A, n, Float32(p), rng.seed, rng.counter
+            )
+        end
+    elseif p > 0.5
+        invert = true
+        p = 1 - p
+        # Use inversion algorithm for n*p < 10
+        if n * p < 10f0
+            kernel = @cuda launch=false kernel_inversion_scalar!(
+                A, n, Float32(p), rng.seed, rng.counter
+            )
+        # BTRS algorithm
+        else
+            kernel = @cuda launch=false kernel_BTRS_scalar!(
+                A, n, Float32(p), rng.seed, rng.counter
+            )
+        end
     end
 
     config  = launch_configuration(kernel.fun)
