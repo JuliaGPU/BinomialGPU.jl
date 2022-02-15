@@ -191,14 +191,11 @@ function kernel_BTRS!(
                 @inbounds n = count[I1]
                 @inbounds p = prob[CartesianIndex(I1, I2)]
             end
-            # BTRS approximations work well for p <= 0.5
-            # invert p and set `invert` flag
-            (invert = p > 0.5f0) && (p = 1-p)
         else
             n = 0
             p = 0f0
         end
-
+        
         # SAMPLER
         # edge cases
         if p <= 0 || n <= 0
@@ -213,66 +210,120 @@ function kernel_BTRS!(
                 rand(Float32) < p && (k += 1)
                 ctr += 1
             end
-        # Use inversion algorithm for n*p < 10
-        elseif n * p < 10f0
-            logp = CUDA.log(1f0-p)
-            geom_sum = 0f0
-            k = 0
-            while true
-                geom = ceil(CUDA.log(rand(Float32)) / logp)
-                geom_sum += geom
-                geom_sum > n && break
-                k += 1
+        elseif p <= 0.5f0
+            # Use inversion algorithm for n*p < 10
+            if n * p < 10f0
+                logp = CUDA.log(1f0-p)
+                geom_sum = 0f0
+                k = 0
+                while true
+                    geom = ceil(CUDA.log(rand(Float32)) / logp)
+                    geom_sum += geom
+                    geom_sum > n && break
+                    k += 1
+                end
+            # BTRS algorithm
+            else
+                r       = p/(1f0-p)
+                s       = p*(1f0-p)
+        
+                stddev  = sqrt(n * s)
+                b       = 1.15f0 + 2.53f0 * stddev
+                a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
+                c       = n * p + 0.5f0
+                v_r     = 0.92f0 - 4.2f0 / b
+        
+                alpha   = (2.83f0 + 5.1f0 / b) * stddev;
+                m       = floor((n + 1) * p)
+    
+                ks = 0f0
+        
+                while true
+                    usample = rand(Float32) - 0.5f0
+                    vsample = rand(Float32)
+        
+                    us = 0.5f0 - abs(usample)
+                    ks = floor((2 * a / us + b) * usample + c)
+        
+                    if us >= 0.07f0 && vsample <= v_r
+                        break
+                    end
+        
+                    if ks < 0 || ks > n
+                        continue
+                    end
+        
+                    v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
+                    ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
+                        (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
+                        (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
+                        stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
+                    if v2 <= ub
+                        break
+                    end
+                end
+                k = Int(ks)
             end
-        # BTRS algorithm
-        else
-            r       = p/(1f0-p)
-            s       = p*(1f0-p)
-    
-            stddev  = sqrt(n * s)
-            b       = 1.15f0 + 2.53f0 * stddev
-            a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
-            c       = n * p + 0.5f0
-            v_r     = 0.92f0 - 4.2f0 / b
-    
-            alpha   = (2.83f0 + 5.1f0 / b) * stddev;
-            m       = floor((n + 1) * p)
-
-            ks = 0f0
-    
-            while true
-                usample = rand(Float32) - 0.5f0
-                vsample = rand(Float32)
-    
-                us = 0.5f0 - abs(usample)
-                ks = floor((2 * a / us + b) * usample + c)
-    
-                if us >= 0.07f0 && vsample <= v_r
-                    break
+        elseif p > 0.5f0
+            p = 1 - p
+            # Use inversion algorithm for n*p < 10
+            if n * p < 10f0
+                logp = CUDA.log(1f0-p)
+                geom_sum = 0f0
+                k = 0
+                while true
+                    geom = ceil(CUDA.log(rand(Float32)) / logp)
+                    geom_sum += geom
+                    geom_sum > n && break
+                    k += 1
                 end
+            # BTRS algorithm
+            else
+                r       = p/(1f0-p)
+                s       = p*(1f0-p)
+        
+                stddev  = sqrt(n * s)
+                b       = 1.15f0 + 2.53f0 * stddev
+                a       = -0.0873f0 + 0.0248f0 * b + 0.01f0 * p
+                c       = n * p + 0.5f0
+                v_r     = 0.92f0 - 4.2f0 / b
+        
+                alpha   = (2.83f0 + 5.1f0 / b) * stddev;
+                m       = floor((n + 1) * p)
     
-                if ks < 0 || ks > n
-                    continue
+                ks = 0f0
+        
+                while true
+                    usample = rand(Float32) - 0.5f0
+                    vsample = rand(Float32)
+        
+                    us = 0.5f0 - abs(usample)
+                    ks = floor((2 * a / us + b) * usample + c)
+        
+                    if us >= 0.07f0 && vsample <= v_r
+                        break
+                    end
+        
+                    if ks < 0 || ks > n
+                        continue
+                    end
+        
+                    v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
+                    ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
+                        (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
+                        (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
+                        stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
+                    if v2 <= ub
+                        break
+                    end
                 end
-    
-                v2 = CUDA.log(vsample * alpha / (a / (us * us) + b))
-                ub = (m + 0.5f0) * CUDA.log((m + 1) / (r * (n - m + 1))) +
-                     (n + 1) * CUDA.log((n - m + 1) / (n - ks + 1)) +
-                     (ks + 0.5f0) * CUDA.log(r * (n - ks + 1) / (ks + 1)) +
-                     stirling_approx_tail(m) + stirling_approx_tail(n - m) - stirling_approx_tail(ks) - stirling_approx_tail(n - ks)
-                if v2 <= ub
-                    break
-                end
+                k = Int(ks)
             end
-            k = Int(ks)
+            k = n - k
         end
 
         if i <= length(A)
-            if invert
-                @inbounds A[i] = n - k
-            else
-                @inbounds A[i] = k
-            end
+            @inbounds A[i] = k
         end
         offset += window
     end
