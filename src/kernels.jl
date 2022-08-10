@@ -42,7 +42,7 @@ function kernel_naive_scalar!(A, n, p, seed::UInt32, counter::UInt32)
 
     # grid-stride loop
     tid    = threadIdx().x
-    window = (blockDim().x - 1i32) * gridDim().x
+    window = blockDim().x * gridDim().x
     offset = (blockIdx().x - 1i32) * blockDim().x
 
     while offset < length(A)
@@ -70,7 +70,7 @@ function kernel_inversion_scalar!(A, n, p, seed::UInt32, counter::UInt32)
 
     # grid-stride loop
     tid    = threadIdx().x
-    window = (blockDim().x - 1i32) * gridDim().x
+    window = blockDim().x * gridDim().x
     offset = (blockIdx().x - 1i32) * blockDim().x
 
     while offset < length(A)
@@ -101,7 +101,7 @@ function kernel_BTRS_scalar!(A, n, p, seed::UInt32, counter::UInt32)
 
     # grid-stride loop
     tid    = threadIdx().x
-    window = (blockDim().x - 1i32) * gridDim().x
+    window = blockDim().x * gridDim().x
     offset = (blockIdx().x - 1i32) * blockDim().x
 
     k = 0
@@ -171,7 +171,7 @@ function kernel_BTRS!(
 
     # grid-stride loop
     tid    = threadIdx().x
-    window = (blockDim().x - 1i32) * gridDim().x
+    window = blockDim().x * gridDim().x
     offset = (blockIdx().x - 1i32) * blockDim().x
 
     while offset < length(A)
