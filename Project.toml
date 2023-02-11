@@ -8,5 +8,5 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-CUDA = "3"
+CUDA = "3, 4"
 julia = "1.6"
