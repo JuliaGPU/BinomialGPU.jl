@@ -1,7 +1,7 @@
 name = "BinomialGPU"
 uuid = "c5bbfde1-2136-42cd-9b65-d5719df69ebf"
 authors = ["Simone Carlo Surace"]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
