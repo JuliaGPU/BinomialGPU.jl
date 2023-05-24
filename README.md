@@ -7,14 +7,14 @@ This package exports two functions `rand_binomial` and `rand_binomial!` that pro
 The sampling occurs natively on the GPU and is implemented using custom GPU kernels.  
 
 The performance of this implementation seems to be very competitive with other libraries.
-Sampling a 1024x1024 matrix on an RTX2070 GPU: BinomialGPU.jl 0.8ms, PyTorch 11ms, CuPy 18ms, tensorflow 400ms. Benchmarking results for other samplers are very welcome; please open an issue if you find one, especially if is faster than this package.
+Sampling a 1024x1024 matrix on an RTX2070 GPU: BinomialGPU.jl 0.8ms, PyTorch 11ms, CuPy 18ms, tensorflow 400ms. Benchmarking results for other samplers are very welcome; please open an issue if you find one, especially if it is faster than this package.
 
 
 ## Installation
 
-In a Julia 1.6 or 1.7 REPL, type `]` to use the built-in package manager and then run:
+In a Julia REPL, type `]` to use the built-in package manager and then run:
 
-```julia
+```
 pkg> add BinomialGPU
 ```
 
